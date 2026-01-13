@@ -1,0 +1,90 @@
+.workflow-canvas-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    background: var(--bg-primary);
+}
+
+/* Controls Styling */
+.canvas-controls {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+    overflow: hidden;
+}
+
+.canvas-controls button {
+    background: var(--bg-secondary);
+    border: none;
+    border-bottom: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.canvas-controls button:last-child {
+    border-bottom: none;
+}
+
+.canvas-controls button:hover {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+}
+
+.canvas-controls button svg {
+    width: 16px;
+    height: 16px;
+}
+
+/* MiniMap Styling */
+.canvas-minimap {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+    overflow: hidden;
+}
+
+.canvas-minimap svg {
+    background: var(--bg-secondary);
+}
+
+/* Panel Styling */
+.react-flow__panel {
+    margin: var(--space-4);
+}
+
+/* Edge Styling */
+.react-flow__edge-path {
+    stroke: var(--primary-500);
+    stroke-width: 2;
+}
+
+.react-flow__edge.selected .react-flow__edge-path {
+    stroke: var(--primary-600);
+    stroke-width: 3;
+}
+
+/* Connection Line */
+.react-flow__connection-line {
+    stroke: var(--primary-400);
+    stroke-width: 2;
+    stroke-dasharray: 5, 5;
+}
+
+/* Selection Box */
+.react-flow__selection {
+    background: rgba(76, 175, 80, 0.1);
+    border: 1px dashed var(--primary-500);
+}
+
+/* Attribution - Hide in production */
+.react-flow__attribution {
+    display: none;
+}

@@ -1,0 +1,53 @@
+.app {
+  display: flex;
+  height: 100vh;
+  /* 固定视口高度 */
+  min-height: 100vh;
+  background: var(--bg-primary);
+  overflow: hidden;
+  /* 防止外层滚动 */
+}
+
+.main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  height: 100%;
+  /* 继承父元素高度 */
+}
+
+/* Placeholder views */
+.placeholder-view {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: var(--space-8);
+  text-align: center;
+}
+
+.placeholder-view h2 {
+  font-size: var(--text-2xl);
+  color: var(--text-primary);
+  margin-bottom: var(--space-4);
+}
+
+.placeholder-view p {
+  font-size: var(--text-base);
+  color: var(--text-secondary);
+  margin-bottom: var(--space-3);
+}
+
+.placeholder-view ul {
+  list-style: none;
+  padding: 0;
+  text-align: left;
+}
+
+.placeholder-view li {
+  padding: var(--space-2) 0;
+  font-size: var(--text-base);
+  color: var(--text-secondary);
+}

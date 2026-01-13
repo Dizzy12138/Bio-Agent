@@ -1,0 +1,331 @@
+/* =============================================
+   Custom Nodes Styles
+   ============================================= */
+
+.custom-node {
+    min-width: 220px;
+    max-width: 280px;
+    background: var(--bg-secondary);
+    border: 2px solid var(--border-color);
+    border-radius: var(--radius-xl);
+    overflow: hidden;
+    transition: all var(--transition-fast);
+    cursor: pointer;
+}
+
+.custom-node:hover {
+    box-shadow: var(--shadow-lg);
+}
+
+.custom-node.selected {
+    border-color: var(--primary-500);
+    box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.2), var(--shadow-lg);
+}
+
+/* Node Header */
+.node-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-3) var(--space-4);
+    color: white;
+    font-weight: 600;
+    font-size: var(--text-sm);
+}
+
+.node-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: var(--radius-md);
+}
+
+.node-title {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.node-badge {
+    opacity: 0.8;
+}
+
+/* Header Colors by Node Type */
+.start-header {
+    background: linear-gradient(135deg, var(--node-start) 0%, #16a34a 100%);
+}
+
+.llm-header {
+    background: linear-gradient(135deg, var(--node-llm) 0%, #7c3aed 100%);
+}
+
+.tool-header {
+    background: linear-gradient(135deg, var(--node-tool) 0%, #d97706 100%);
+}
+
+.router-header {
+    background: linear-gradient(135deg, var(--node-router) 0%, #0891b2 100%);
+}
+
+.output-header {
+    background: linear-gradient(135deg, var(--node-output) 0%, #db2777 100%);
+}
+
+/* Node Content */
+.node-content {
+    padding: var(--space-3) var(--space-4);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+/* Node Info Row */
+.node-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: var(--text-xs);
+}
+
+.info-label {
+    color: var(--text-muted);
+}
+
+.info-value {
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.model-value {
+    padding: 2px 8px;
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-md);
+    color: var(--node-llm);
+}
+
+.category-value {
+    color: var(--accent-500);
+}
+
+.output-type {
+    padding: 2px 8px;
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-md);
+}
+
+/* Variables Display */
+.node-variables,
+.router-routes,
+.ui-components-preview {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.variables-label,
+.routes-label,
+.components-label {
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+}
+
+.variables-list,
+.components-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1);
+}
+
+.variable-tag,
+.component-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    padding: 2px 8px;
+    font-size: var(--text-xs);
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-sm);
+    color: var(--text-secondary);
+}
+
+.required-mark {
+    color: var(--error-500);
+    margin-left: 2px;
+}
+
+.variable-more {
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+}
+
+/* Routes List */
+.routes-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+}
+
+.route-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-1) var(--space-2);
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-sm);
+    font-size: var(--text-xs);
+}
+
+.route-index {
+    width: 16px;
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--node-router);
+    color: white;
+    border-radius: var(--radius-full);
+    font-size: 10px;
+    font-weight: 600;
+}
+
+.route-condition {
+    flex: 1;
+    color: var(--text-secondary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Prompt Preview */
+.node-prompt-preview,
+.template-preview {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+}
+
+.prompt-label,
+.template-label {
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+}
+
+.prompt-text,
+.template-text {
+    font-size: var(--text-xs);
+    color: var(--text-secondary);
+    line-height: 1.4;
+    margin: 0;
+    padding: var(--space-2);
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-sm);
+    max-height: 48px;
+    overflow: hidden;
+}
+
+/* Tool Node Specific */
+.tool-name {
+    padding: var(--space-2);
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-md);
+}
+
+.tool-name-label {
+    font-size: var(--text-xs);
+    font-family: var(--font-mono);
+    color: var(--node-tool);
+}
+
+.tool-description {
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+    margin: 0;
+    line-height: 1.4;
+}
+
+/* Node Parameters */
+.node-params {
+    display: flex;
+    gap: var(--space-3);
+    padding-top: var(--space-2);
+    border-top: 1px solid var(--border-color);
+}
+
+.param-item {
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+}
+
+/* Handles */
+.node-handle {
+    width: 12px;
+    height: 12px;
+    background: var(--bg-secondary);
+    border: 2px solid var(--border-color);
+    transition: all var(--transition-fast);
+}
+
+.node-handle:hover {
+    transform: scale(1.2);
+}
+
+.source-handle {
+    border-color: var(--primary-500);
+}
+
+.target-handle {
+    border-color: var(--accent-500);
+}
+
+.start-node .source-handle {
+    border-color: var(--node-start);
+}
+
+.llm-node .source-handle {
+    border-color: var(--node-llm);
+}
+
+.tool-node .source-handle {
+    border-color: var(--node-tool);
+}
+
+.router-node .source-handle {
+    border-color: var(--node-router);
+}
+
+.output-node .target-handle {
+    border-color: var(--node-output);
+}
+
+/* Execution State Indicators */
+.custom-node.executing {
+    border-color: var(--warning-500);
+    animation: pulse 1.5s infinite;
+}
+
+.custom-node.completed {
+    border-color: var(--success-500);
+}
+
+.custom-node.error {
+    border-color: var(--error-500);
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4);
+    }
+
+    50% {
+        box-shadow: 0 0 0 8px rgba(245, 158, 11, 0);
+    }
+}

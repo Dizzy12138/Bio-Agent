@@ -1,0 +1,403 @@
+.message-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--space-6);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+}
+
+.message-list.empty {
+    align-items: center;
+    justify-content: center;
+}
+
+/* Welcome Message */
+.welcome-message {
+    text-align: center;
+    max-width: 500px;
+    animation: fadeIn 0.5s ease;
+}
+
+.welcome-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 80px;
+    height: 80px;
+    background: linear-gradient(135deg, var(--primary-500) 0%, var(--primary-600) 100%);
+    border-radius: var(--radius-2xl);
+    color: white;
+    margin-bottom: var(--space-4);
+}
+
+.welcome-message h3 {
+    font-size: var(--text-xl);
+    color: var(--text-primary);
+    margin-bottom: var(--space-2);
+}
+
+.welcome-message p {
+    color: var(--text-secondary);
+    margin-bottom: var(--space-3);
+}
+
+.welcome-message ul {
+    list-style: none;
+    text-align: left;
+    padding: var(--space-4);
+    background: var(--bg-secondary);
+    border-radius: var(--radius-lg);
+    margin-bottom: var(--space-4);
+}
+
+.welcome-message li {
+    padding: var(--space-2) 0;
+    color: var(--text-secondary);
+    font-size: var(--text-sm);
+}
+
+.example-queries p {
+    font-size: var(--text-sm);
+    color: var(--text-muted);
+    margin-bottom: var(--space-2);
+}
+
+.example-btn {
+    display: block;
+    width: 100%;
+    padding: var(--space-3);
+    margin-bottom: var(--space-2);
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    font-size: var(--text-sm);
+    color: var(--text-secondary);
+    cursor: pointer;
+    text-align: left;
+    transition: all var(--transition-fast);
+}
+
+.example-btn:hover {
+    background: var(--bg-tertiary);
+    border-color: var(--primary-500);
+    color: var(--text-primary);
+}
+
+/* Message Item */
+.message {
+    display: flex;
+    gap: var(--space-3);
+    max-width: 85%;
+    animation: slideUp 0.3s ease;
+}
+
+.message.user {
+    align-self: flex-end;
+    flex-direction: row-reverse;
+}
+
+.message.assistant {
+    align-self: flex-start;
+}
+
+.message-avatar {
+    flex-shrink: 0;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-full);
+    color: white;
+}
+
+.message.user .message-avatar {
+    background: linear-gradient(135deg, var(--accent-500) 0%, var(--accent-600) 100%);
+}
+
+.message.assistant .message-avatar {
+    background: linear-gradient(135deg, var(--primary-500) 0%, var(--primary-600) 100%);
+}
+
+.message-content {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.message.user .message-content {
+    align-items: flex-end;
+}
+
+.message-body {
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-xl);
+    font-size: var(--text-base);
+    line-height: 1.6;
+}
+
+.message.user .message-body {
+    background: linear-gradient(135deg, var(--primary-500) 0%, var(--primary-600) 100%);
+    color: white;
+    border-bottom-right-radius: var(--radius-sm);
+}
+
+.message.assistant .message-body {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    border-bottom-left-radius: var(--radius-sm);
+}
+
+/* Markdown Styling inside messages */
+.message.assistant .message-body h2 {
+    font-size: var(--text-lg);
+    margin: var(--space-3) 0 var(--space-2);
+    color: var(--primary-600);
+}
+
+.message.assistant .message-body h3 {
+    font-size: var(--text-base);
+    margin: var(--space-2) 0 var(--space-1);
+}
+
+.message.assistant .message-body p {
+    margin: var(--space-2) 0;
+    color: var(--text-primary);
+}
+
+.message.assistant .message-body ul,
+.message.assistant .message-body ol {
+    margin: var(--space-2) 0;
+    padding-left: var(--space-5);
+}
+
+.message.assistant .message-body li {
+    margin: var(--space-1) 0;
+}
+
+.message.assistant .message-body table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: var(--space-3) 0;
+    font-size: var(--text-sm);
+}
+
+.message.assistant .message-body th,
+.message.assistant .message-body td {
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--border-color);
+    text-align: left;
+}
+
+.message.assistant .message-body th {
+    background: var(--bg-tertiary);
+    font-weight: 600;
+}
+
+.message.assistant .message-body code {
+    background: var(--bg-tertiary);
+    padding: 2px 6px;
+    border-radius: var(--radius-sm);
+    font-family: var(--font-mono);
+    font-size: 0.9em;
+}
+
+.message.assistant .message-body pre {
+    background: var(--bg-dark-secondary);
+    padding: var(--space-3);
+    border-radius: var(--radius-lg);
+    overflow-x: auto;
+    margin: var(--space-3) 0;
+}
+
+.message.assistant .message-body pre code {
+    background: transparent;
+    color: var(--neutral-100);
+    padding: 0;
+}
+
+.message.assistant .message-body blockquote {
+    border-left: 3px solid var(--primary-500);
+    padding-left: var(--space-3);
+    margin: var(--space-3) 0;
+    color: var(--text-secondary);
+    font-style: italic;
+}
+
+.message-time {
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+}
+
+/* Tool Calls */
+.tool-calls {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.tool-call-card {
+    padding: var(--space-3);
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-lg);
+    border-left: 3px solid var(--node-tool);
+}
+
+.tool-call-card.success {
+    border-left-color: var(--success-500);
+}
+
+.tool-call-card.error {
+    border-left-color: var(--error-500);
+}
+
+.tool-call-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--text-sm);
+}
+
+.tool-name {
+    font-family: var(--font-mono);
+    color: var(--text-primary);
+    flex: 1;
+}
+
+.tool-status {
+    font-size: var(--text-xs);
+    padding: 2px 6px;
+    border-radius: var(--radius-sm);
+}
+
+.tool-status.success {
+    background: rgba(34, 197, 94, 0.1);
+    color: var(--success-500);
+}
+
+.tool-status.running {
+    background: rgba(245, 158, 11, 0.1);
+    color: var(--warning-500);
+}
+
+.tool-status.error {
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--error-500);
+}
+
+.tool-call-result {
+    margin-top: var(--space-2);
+}
+
+.tool-call-result code {
+    display: block;
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+    white-space: pre-wrap;
+}
+
+/* Citations */
+.citations {
+    margin-top: var(--space-3);
+    padding-top: var(--space-3);
+    border-top: 1px solid var(--border-color);
+}
+
+.citations h4 {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+    font-size: var(--text-sm);
+    color: var(--text-secondary);
+    margin-bottom: var(--space-2);
+}
+
+.citation-card {
+    padding: var(--space-2) var(--space-3);
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-md);
+    margin-bottom: var(--space-2);
+}
+
+.citation-title {
+    font-size: var(--text-sm);
+    font-weight: 500;
+    color: var(--accent-500);
+    margin-bottom: var(--space-1);
+}
+
+.citation-meta {
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+    margin-bottom: var(--space-1);
+}
+
+.citation-snippet {
+    font-size: var(--text-xs);
+    color: var(--text-secondary);
+    font-style: italic;
+}
+
+/* Typing Indicator */
+.typing-indicator {
+    display: flex;
+    gap: 4px;
+    padding: var(--space-3) var(--space-4);
+    background: var(--bg-secondary);
+    border-radius: var(--radius-xl);
+    border: 1px solid var(--border-color);
+}
+
+.typing-indicator span {
+    width: 8px;
+    height: 8px;
+    background: var(--text-muted);
+    border-radius: 50%;
+    animation: typing 1.4s infinite ease-in-out;
+}
+
+.typing-indicator span:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.typing-indicator span:nth-child(3) {
+    animation-delay: 0.4s;
+}
+
+@keyframes typing {
+
+    0%,
+    100% {
+        transform: translateY(0);
+        opacity: 0.4;
+    }
+
+    50% {
+        transform: translateY(-4px);
+        opacity: 1;
+    }
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}

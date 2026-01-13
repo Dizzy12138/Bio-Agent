@@ -1,0 +1,231 @@
+.generative-ui {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-xl);
+    overflow: hidden;
+    animation: fadeIn 0.3s ease;
+}
+
+.ui-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-3) var(--space-4);
+    background: var(--bg-tertiary);
+    border-bottom: 1px solid var(--border-color);
+    font-size: var(--text-sm);
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.ui-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--space-2);
+    padding: var(--space-3) var(--space-4);
+    border-top: 1px solid var(--border-color);
+    background: var(--bg-tertiary);
+}
+
+.ui-action-btn {
+    padding: var(--space-2) var(--space-3);
+    font-size: var(--text-sm);
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.ui-action-btn:hover {
+    background: var(--bg-primary);
+    border-color: var(--primary-500);
+    color: var(--text-primary);
+}
+
+.ui-action-btn.primary {
+    background: var(--primary-500);
+    border-color: var(--primary-500);
+    color: white;
+}
+
+.ui-action-btn.primary:hover {
+    background: var(--primary-600);
+}
+
+/* Comparison Table */
+.table-container {
+    overflow-x: auto;
+    padding: var(--space-4);
+}
+
+.comparison-table table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.comparison-table th,
+.comparison-table td {
+    padding: var(--space-3);
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+    font-size: var(--text-sm);
+}
+
+.comparison-table th {
+    font-weight: 600;
+    color: var(--text-primary);
+    background: var(--bg-tertiary);
+}
+
+.comparison-table tr:hover {
+    background: var(--bg-tertiary);
+}
+
+.comparison-table .material-name {
+    font-weight: 500;
+    color: var(--primary-600);
+}
+
+/* Chart Placeholder */
+.chart-container {
+    padding: var(--space-6);
+}
+
+.chart-mock {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-8);
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-lg);
+    color: var(--text-muted);
+}
+
+.chart-mock p {
+    margin: var(--space-2) 0;
+    font-size: var(--text-base);
+    color: var(--text-secondary);
+}
+
+.chart-mock span {
+    font-size: var(--text-xs);
+}
+
+/* Material Card */
+.card-content {
+    padding: var(--space-4);
+}
+
+.material-card h4 {
+    font-size: var(--text-lg);
+    margin: 0 0 var(--space-1);
+    color: var(--text-primary);
+}
+
+.material-type {
+    display: inline-block;
+    padding: 2px 8px;
+    font-size: var(--text-xs);
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-md);
+    color: var(--text-secondary);
+    margin-bottom: var(--space-3);
+}
+
+.properties-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-3);
+    margin-bottom: var(--space-3);
+}
+
+.property-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.property-label {
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+}
+
+.property-value {
+    font-size: var(--text-sm);
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.applications {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.applications-label {
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+}
+
+.application-tag {
+    padding: 2px 8px;
+    font-size: var(--text-xs);
+    background: rgba(76, 175, 80, 0.1);
+    color: var(--primary-600);
+    border-radius: var(--radius-sm);
+}
+
+/* Experiment Card */
+.experiment-card h4 {
+    font-size: var(--text-base);
+    margin: 0 0 var(--space-3);
+    color: var(--text-primary);
+}
+
+.experiment-section {
+    margin-bottom: var(--space-3);
+}
+
+.experiment-section h5 {
+    font-size: var(--text-sm);
+    color: var(--text-secondary);
+    margin: 0 0 var(--space-2);
+}
+
+.experiment-section ul,
+.experiment-section ol {
+    margin: 0;
+    padding-left: var(--space-5);
+}
+
+.experiment-section li {
+    font-size: var(--text-sm);
+    color: var(--text-primary);
+    margin-bottom: var(--space-1);
+}
+
+.expected-outcome {
+    padding: var(--space-3);
+    background: rgba(76, 175, 80, 0.1);
+    border-radius: var(--radius-md);
+    font-size: var(--text-sm);
+    color: var(--text-primary);
+}
+
+.expected-outcome strong {
+    color: var(--primary-600);
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
