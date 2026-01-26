@@ -25,6 +25,10 @@ export const AGENT_CONFIG = {
 // 类型定义
 // =============================================
 
+export interface AgentConfigProvider {
+    getConfig(): Promise<LLMConfig> | LLMConfig;
+}
+
 export type ThinkingStepType =
     | 'analyzing'      // 分析用户意图
     | 'planning'       // 规划
@@ -91,35 +95,40 @@ function getSystemPrompt(): string {
 
 export class BioExtractAgent {
     private llmConfig: LLMConfig;
+    private configProvider?: AgentConfigProvider;
     private callbacks: AgentCallbacks;
     private thinkingSteps: ThinkingStep[] = [];
 
-    constructor(initialConfig: LLMConfig | null, callbacks: AgentCallbacks = {}) {
+    constructor(
+        configOrProvider: LLMConfig | AgentConfigProvider | null,
+        callbacks: AgentCallbacks = {}
+    ) {
         this.callbacks = callbacks;
-        // 如果没有传入配置，尝试加载系统配置
-        this.llmConfig = initialConfig || this.loadSystemConfig();
-    }
 
-    private loadSystemConfig(): LLMConfig {
-        // 从 localStorage 读取系统配置 (临时方案，理想情况应通过 Context)
-        // 实际上 SettingsPage 并未将完整 Provider 存入 localStorage，只存了 activeTab
-        // 这里我们需要一个新的帮助函数来同步系统配置
-        // 假定系统会有一个 SystemLLMStore 或者我们回退到 process.env / 默认值
-        const saved = localStorage.getItem('bioextract_llm_config');
-        if (saved) return JSON.parse(saved);
-
-        // Fallback
-        return {
+        // 默认空配置
+        const defaultConfig: LLMConfig = {
             provider: 'openai',
             apiKey: '',
-            model: 'gpt-4o',
-            baseUrl: 'https://api.openai.com/v1'
+            model: 'gpt-3.5-turbo',
+            baseUrl: ''
         };
+
+        if (!configOrProvider) {
+            this.llmConfig = defaultConfig;
+        } else if ('getConfig' in configOrProvider && typeof configOrProvider.getConfig === 'function') {
+            this.configProvider = configOrProvider as AgentConfigProvider;
+            this.llmConfig = defaultConfig; // 初始占位，运行时会更新
+        } else {
+            this.llmConfig = configOrProvider as LLMConfig;
+        }
     }
 
     // 允许外部更新配置 (例如从系统设置选择后)
     public updateConfig(newConfig: LLMConfig) {
         this.llmConfig = newConfig;
+        // 如果这里直接设置了，我们可以清除 provider 以优先使用 explicit config?
+        // 不，保持 provider，但 updateConfig 代表一次性的 override.
+        // 简单起见，覆盖当前 config
     }
 
     private addStep(type: ThinkingStepType, content: string, metadata?: Record<string, unknown>) {
@@ -135,30 +144,87 @@ export class BioExtractAgent {
     }
 
     /**
-     * 解析 LLM 的混合输出
-     * 支持 <query> (旧版) 和 <tool_call> (新版)
+     * 提取标签内容 (Robust)
+     * 1. 查找 <tagName>
+     * 2. 查找 </tagName>，如果没有找到但存在起始标签，尝试提取剩余内容（处理截断）
+     */
+    private extractTagContent(text: string, tagName: string): string | null {
+        const startTag = `<${tagName}>`;
+        const endTag = `</${tagName}>`;
+
+        const startIndex = text.indexOf(startTag);
+        if (startIndex === -1) return null;
+
+        const contentStart = startIndex + startTag.length;
+        const endIndex = text.indexOf(endTag, contentStart);
+
+        if (endIndex === -1) {
+            // 没有找到结束标签，假设是流式传输被截断，或者是 LLM 忘记闭合
+            // 简单的策略：如果起始标签存在，取剩余所有内容
+            // TODO: 可以添加长度检查，防止提取过长的错误内容
+            return text.substring(contentStart).trim();
+        }
+
+        return text.substring(contentStart, endIndex).trim();
+    }
+
+    /**
+     * 尝试解析 JSON，支持简单的自动修复
+     */
+    private tryParseJson(jsonStr: string): any {
+        try {
+            return JSON.parse(jsonStr);
+        } catch (e) {
+            // 简单的修复尝试
+            let fixed = jsonStr.trim();
+            // 1. 补全结尾
+            if (!fixed.endsWith('}') && !fixed.endsWith(']')) {
+                fixed += '}'; // 盲猜是对象
+            }
+            // 2. 补全引号 (简单判断)
+            if ((fixed.match(/"/g) || []).length % 2 !== 0) {
+                fixed += '"';
+                if (!fixed.endsWith('}')) fixed += '}';
+            }
+
+            try {
+                return JSON.parse(fixed);
+            } catch (e2) {
+                console.warn('Failed to heal JSON:', jsonStr);
+                return null;
+            }
+        }
+    }
+
+    /**
+     * 解析 LLM 的混合输出 (Enhanced)
      */
     private parseOutput(content: string) {
-        const thinkingMatch = content.match(/<thinking>([\s\S]*?)<\/thinking>/i);
+        const thinking = this.extractTagContent(content, 'thinking');
+        const toolCallRaw = this.extractTagContent(content, 'tool_call');
+        const queryRaw = this.extractTagContent(content, 'query');
+        const answer = this.extractTagContent(content, 'answer');
 
-        // 1. 尝试解析 Tool Call
-        const toolCallMatch = content.match(/<tool_call>([\s\S]*?)<\/tool_call>/i);
-
-        // 2. 兼容旧版 SQL Query
-        const queryMatch = content.match(/<query>([\s\S]*?)<\/query>/i);
-        const sqlBlockMatch = content.match(/```sql\n([\s\S]*?)```/i);
-        let sql = queryMatch ? queryMatch[1].trim() : (sqlBlockMatch ? sqlBlockMatch[1].trim() : null);
+        // 兼容 SQL markdown block 如果没有 explicit tags
+        let sql = queryRaw;
+        if (!sql) {
+            const sqlBlockMatch = content.match(/```sql\n([\s\S]*?)```/i);
+            if (sqlBlockMatch) {
+                sql = sqlBlockMatch[1].trim();
+            }
+        }
         if (sql) sql = sql.replace(/```sql|```/g, '').trim();
 
-        // 3. 解析 Answer
-        const answerMatch = content.match(/<answer>([\s\S]*?)<\/answer>/i);
-
         let toolCall = null;
-        if (toolCallMatch) {
-            try {
-                toolCall = JSON.parse(toolCallMatch[1].trim());
-            } catch (e) {
-                console.error('Failed to parse tool call JSON:', e);
+        if (toolCallRaw) {
+            toolCall = this.tryParseJson(toolCallRaw);
+            if (!toolCall) {
+                // 如果解析失败，返回一个错误的工具调用以提示 Agent
+                toolCall = {
+                    error: true,
+                    raw: toolCallRaw,
+                    message: "Failed to parse malformed JSON in <tool_call>"
+                };
             }
         } else if (sql) {
             // 将 SQL 转换为 tool call 格式
@@ -166,9 +232,9 @@ export class BioExtractAgent {
         }
 
         return {
-            thinking: thinkingMatch ? thinkingMatch[1].trim() : null,
+            thinking,
             toolCall,
-            answer: answerMatch ? answerMatch[1].trim() : null
+            answer
         };
     }
 
@@ -177,6 +243,23 @@ export class BioExtractAgent {
      */
     async execute(context: AgentContext): Promise<AgentResult> {
         const startTime = Date.now();
+
+        // 动态加载配置 (如果有 Provider)
+        if (this.configProvider) {
+            try {
+                this.llmConfig = await this.configProvider.getConfig();
+            } catch (e) {
+                return {
+                    success: false,
+                    response: `Configuration Error: ${e instanceof Error ? e.message : String(e)}`,
+                    thinkingSteps: [],
+                    executedSQLs: [],
+                    toolCalls: [],
+                    totalDuration: Date.now() - startTime
+                };
+            }
+        }
+
         this.thinkingSteps = [];
         const executedSQLs: string[] = [];
         const toolCalls: Array<{ tool: string; params: unknown; result: unknown }> = [];

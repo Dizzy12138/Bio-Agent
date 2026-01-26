@@ -9,7 +9,13 @@ async def lifespan(app: FastAPI):
     print("Backend service starting up...")
     from app.db.mongo import mongodb
     from app.db.neo4j import neo4j_db
+    from app.services.llm import llm_service
     
+    try:
+        await llm_service.start()
+    except Exception as e:
+        print(f"Error: LLMService initialization failed: {e}")
+
     try:
         mongodb.connect()
         print("MongoDB initialized.")
@@ -33,6 +39,11 @@ async def lifespan(app: FastAPI):
     
     yield
     # Shutdown
+    try:
+        await llm_service.stop()
+    except Exception as e:
+        print(f"Error: LLMService shutdown failed: {e}")
+
     try:
         mongodb.close()
     except: pass

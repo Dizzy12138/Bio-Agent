@@ -9,7 +9,21 @@ class LLMService:
         # Default to OpenAI-compatible interface
         self.api_key = settings.OPENAI_API_KEY
         self.base_url = "https://api.openai.com/v1" # Can be overridden by env
+        self.client: Optional[httpx.AsyncClient] = None
     
+    async def start(self):
+        """Initialize the HTTP client"""
+        if not self.client:
+            self.client = httpx.AsyncClient(timeout=60.0)
+            print("LLMService HTTP client initialized.")
+
+    async def stop(self):
+        """Close the HTTP client"""
+        if self.client:
+            await self.client.aclose()
+            self.client = None
+            print("LLMService HTTP client closed.")
+
     async def stream_chat(
         self, 
         messages: List[Dict[str, str]], 
@@ -35,13 +49,16 @@ class LLMService:
                 yield chunk
             return
 
-        async with httpx.AsyncClient() as client:
-            async with client.stream(
+        if not self.client:
+            # Fallback if start() wasn't called, though it should be in main.py
+            self.client = httpx.AsyncClient(timeout=60.0)
+
+        try:
+            async with self.client.stream(
                 "POST", 
                 f"{self.base_url}/chat/completions", 
                 headers=headers, 
                 json=payload,
-                timeout=60.0
             ) as response:
                 if response.status_code != 200:
                     error_text = await response.aread()
@@ -60,6 +77,8 @@ class LLMService:
                                 yield delta["content"]
                         except:
                             pass
+        except Exception as e:
+            yield f"Error: Request failed - {str(e)}"
 
     async def _mock_stream(self, messages: List[Dict[str, str]]) -> AsyncGenerator[str, None]:
         import asyncio
