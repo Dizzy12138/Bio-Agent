@@ -1,57 +1,48 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Sidebar } from './components/Sidebar';
+
 import { ExpertManager } from './features/experts';
 import { ChatInterface } from './features/chat';
 import { KnowledgeManager } from './features/knowledge';
 import { BioExtractChat } from './features/bioextract';
+import { PlaygroundLayout } from './features/playground';
+import { InteractiveQueryPage } from './features/query';
+import { LiteratureMiningPage } from './features/literature';
+import { MolecularAnalysisPage } from './features/molecular';
+import { MicrobialTraitPage } from './features/microbial';
+import { SettingsPage } from './features/settings';
+import { SkillsPage } from './features/skills';
 import './styles/index.css';
 import './App.css';
 
-type ViewType = 'experts' | 'chat' | 'knowledge' | 'bioextract' | 'settings';
+import { Routes, Route, Navigate } from 'react-router-dom';
 
 const App: React.FC = () => {
-  const [activeView, setActiveView] = useState<ViewType>('experts');
-
-  const renderContent = () => {
-    switch (activeView) {
-      case 'experts':
-        return <ExpertManager />;
-      case 'chat':
-        return <ChatInterface />;
-      case 'knowledge':
-        return <KnowledgeManager />;
-      case 'bioextract':
-        return <BioExtractChat />;
-      case 'settings':
-        return <SettingsPlaceholder />;
-      default:
-        return <ExpertManager />;
-    }
-  };
-
   return (
     <div className="app" data-theme="light">
-      <Sidebar activeView={activeView} onViewChange={setActiveView} />
+      <Sidebar />
       <main className="main-content">
-        {renderContent()}
+        <Routes>
+          <Route path="/" element={<Navigate to="/experts" replace />} />
+          <Route path="/experts" element={<ExpertManager />} />
+          <Route path="/chat" element={<ChatInterface />} />
+          <Route path="/knowledge" element={<KnowledgeManager />} />
+          <Route path="/bioextract" element={<BioExtractChat />} />
+          <Route path="/playground" element={<PlaygroundLayout />} />
+          <Route path="/query" element={<InteractiveQueryPage />} />
+          <Route path="/literature" element={<LiteratureMiningPage />} />
+          <Route path="/molecular" element={<MolecularAnalysisPage />} />
+          <Route path="/microbial" element={<MicrobialTraitPage />} />
+          <Route path="/settings" element={<SettingsPage />} />
+          <Route path="/skills" element={<SkillsPage />} />
+          <Route path="*" element={<Navigate to="/experts" replace />} />
+        </Routes>
       </main>
     </div>
   );
 };
 
-// 设置占位组件
-const SettingsPlaceholder: React.FC = () => (
-  <div className="placeholder-view">
-    <h2>系统设置</h2>
-    <p>这里将配置：</p>
-    <ul>
-      <li>🤖 LLM模型配置与API密钥</li>
-      <li>🔌 MCP协议工具注册</li>
-      <li>🎨 界面主题与语言</li>
-      <li>👥 用户权限管理</li>
-    </ul>
-  </div>
-);
+
+
 
 export default App;
-

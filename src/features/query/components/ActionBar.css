@@ -1,0 +1,87 @@
+/* =============================================
+   ActionBar - 批量操作栏样式
+   ============================================= */
+
+.action-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-3) var(--space-4);
+    background: linear-gradient(135deg, var(--accent-500), var(--accent-600));
+    color: white;
+    border-radius: var(--radius-lg);
+    margin: var(--space-3);
+    box-shadow: var(--shadow-md);
+    animation: slideUp var(--transition-normal);
+}
+
+.action-bar__info {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.action-bar__count {
+    font-size: var(--text-sm);
+    opacity: 0.9;
+}
+
+.action-bar__count strong {
+    font-size: var(--text-lg);
+    font-weight: 700;
+    margin: 0 var(--space-1);
+}
+
+.action-bar__actions {
+    display: flex;
+    gap: var(--space-2);
+}
+
+.action-bar__btn {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-3);
+    font-size: var(--text-sm);
+    font-weight: 500;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    border: none;
+}
+
+.action-bar__btn--primary {
+    background: white;
+    color: var(--accent-600);
+}
+
+.action-bar__btn--primary:hover:not(:disabled) {
+    background: var(--neutral-100);
+    transform: translateY(-1px);
+}
+
+.action-bar__btn--secondary {
+    background: rgba(255, 255, 255, 0.15);
+    color: white;
+    backdrop-filter: blur(4px);
+}
+
+.action-bar__btn--secondary:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.25);
+}
+
+.action-bar__btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* 响应式：小屏幕隐藏文字 */
+@media (max-width: 768px) {
+    .action-bar__btn span {
+        display: none;
+    }
+
+    .action-bar__btn {
+        padding: var(--space-2);
+    }
+}

@@ -54,8 +54,6 @@ export const TemplateGallery: React.FC<TemplateGalleryProps> = ({
         onClose();
     };
 
-    if (!isOpen) return null;
-
     const modalContent = (
         <div className="template-gallery-overlay" onClick={onClose}>
             <div className="template-gallery-modal" onClick={e => e.stopPropagation()}>
@@ -166,7 +164,7 @@ export const TemplateGallery: React.FC<TemplateGalleryProps> = ({
         </div>
     );
 
-    return createPortal(modalContent, document.body);
+    return isOpen ? createPortal(modalContent, document.body) : null;
 };
 
 // Template Card Component

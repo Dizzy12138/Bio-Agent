@@ -1,0 +1,235 @@
+/* =============================================
+   StructureEditor - 结构编辑器样式
+   ============================================= */
+
+.structure-editor {
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+}
+
+/* 头部 */
+.structure-editor__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-3) var(--space-4);
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.structure-editor__header h4 {
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.structure-editor__actions {
+    display: flex;
+    gap: var(--space-2);
+}
+
+.structure-editor__btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.structure-editor__btn--icon {
+    width: 32px;
+    height: 32px;
+    color: var(--text-muted);
+}
+
+.structure-editor__btn--icon:hover:not(:disabled) {
+    border-color: var(--accent-400);
+    color: var(--accent-500);
+}
+
+.structure-editor__btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* 历史记录 */
+.structure-editor__history {
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-color);
+    padding: var(--space-2);
+    animation: slideUp var(--transition-fast);
+}
+
+.structure-editor__history-title {
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+    padding: var(--space-1) var(--space-2);
+}
+
+.structure-editor__history-item {
+    width: 100%;
+    text-align: left;
+    padding: var(--space-2);
+    background: transparent;
+    border: none;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: background var(--transition-fast);
+}
+
+.structure-editor__history-item:hover {
+    background: var(--bg-tertiary);
+}
+
+.structure-editor__history-item code {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    color: var(--text-secondary);
+}
+
+/* 输入区 */
+.structure-editor__input-section {
+    padding: var(--space-4);
+}
+
+.structure-editor__label {
+    display: block;
+    font-size: var(--text-sm);
+    font-weight: 500;
+    color: var(--text-primary);
+    margin-bottom: var(--space-2);
+}
+
+.structure-editor__textarea {
+    width: 100%;
+    padding: var(--space-3);
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    color: var(--text-primary);
+    background: var(--bg-secondary);
+    border: 2px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    resize: vertical;
+    min-height: 80px;
+    transition: all var(--transition-fast);
+}
+
+.structure-editor__textarea:focus {
+    outline: none;
+    border-color: var(--accent-400);
+    background: var(--bg-primary);
+    box-shadow: 0 0 0 4px rgba(33, 150, 243, 0.1);
+}
+
+.structure-editor__textarea.error {
+    border-color: var(--error-500);
+}
+
+.structure-editor__textarea::placeholder {
+    color: var(--text-muted);
+    font-family: var(--font-sans);
+}
+
+.structure-editor__error {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin-top: var(--space-2);
+    font-size: var(--text-sm);
+    color: var(--error-500);
+}
+
+/* 分析按钮 */
+.structure-editor__analyze-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    width: calc(100% - var(--space-8));
+    margin: 0 var(--space-4) var(--space-4);
+    padding: var(--space-3) var(--space-4);
+    font-size: var(--text-base);
+    font-weight: 600;
+    color: white;
+    background: linear-gradient(135deg, var(--primary-500), var(--primary-600));
+    border: none;
+    border-radius: var(--radius-lg);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.structure-editor__analyze-btn:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+}
+
+.structure-editor__analyze-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.structure-editor__spinner {
+    width: 18px;
+    height: 18px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+/* 模板 */
+.structure-editor__templates {
+    padding: var(--space-4);
+    border-top: 1px solid var(--border-color);
+    background: var(--bg-secondary);
+}
+
+.structure-editor__templates-title {
+    font-size: var(--text-xs);
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: var(--space-2);
+}
+
+.structure-editor__templates-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+}
+
+.structure-editor__template-btn {
+    padding: var(--space-2) var(--space-3);
+    font-size: var(--text-xs);
+    font-weight: 500;
+    color: var(--accent-600);
+    background: var(--accent-50);
+    border: 1px solid var(--accent-200);
+    border-radius: var(--radius-full);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.structure-editor__template-btn:hover {
+    background: var(--accent-100);
+    border-color: var(--accent-300);
+}
+
+/* 深色模式 */
+[data-theme="dark"] .structure-editor {
+    background: var(--bg-dark-secondary);
+}
+
+[data-theme="dark"] .structure-editor__template-btn {
+    background: rgba(33, 150, 243, 0.15);
+    border-color: rgba(33, 150, 243, 0.3);
+    color: var(--accent-300);
+}

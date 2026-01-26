@@ -1,20 +1,25 @@
+/* Card.css - V2 Cold-Slate */
 .card {
-    background: var(--bg-secondary);
-    border-radius: var(--radius-xl);
+    background-color: var(--bg-surface);
+    border-radius: var(--radius-md);
+    /* 8px */
     overflow: hidden;
+    transition: box-shadow var(--duration-normal);
 }
 
 /* Variants */
 .card-default {
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--border-default);
+    box-shadow: var(--shadow-sm);
 }
 
 .card-elevated {
-    box-shadow: var(--shadow-lg);
+    border: 1px solid var(--border-subtle);
+    box-shadow: var(--shadow-md);
 }
 
 .card-outlined {
-    border: 2px solid var(--border-color);
+    border: 1px solid var(--border-default);
     background: transparent;
 }
 
@@ -41,8 +46,14 @@
     align-items: flex-start;
     justify-content: space-between;
     padding-bottom: var(--space-4);
-    border-bottom: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--border-subtle);
     margin-bottom: var(--space-4);
+}
+
+/* Remove margin if padding is used on parent */
+.card-padding-none .card-header {
+    padding: var(--space-4);
+    margin-bottom: 0;
 }
 
 .card-header-content {
@@ -50,15 +61,16 @@
 }
 
 .card-title {
-    font-size: var(--text-lg);
+    font-size: var(--font-lg);
     font-weight: 600;
     color: var(--text-primary);
+    line-height: var(--leading-tight);
     margin: 0;
 }
 
 .card-subtitle {
-    font-size: var(--text-sm);
-    color: var(--text-muted);
+    font-size: var(--font-sm);
+    color: var(--text-secondary);
     margin: var(--space-1) 0 0;
 }
 
@@ -72,12 +84,23 @@
     flex: 1;
 }
 
+.card-padding-none .card-body {
+    padding: var(--space-4);
+}
+
 /* Card Footer */
 .card-footer {
     display: flex;
     align-items: center;
-    gap: var(--space-3);
+    gap: var(--space-4);
     padding-top: var(--space-4);
-    border-top: 1px solid var(--border-color);
+    border-top: 1px solid var(--border-subtle);
     margin-top: var(--space-4);
+    background-color: var(--slate-50);
+    /* Subtle footer contrast */
+}
+
+.card-padding-none .card-footer {
+    padding: var(--space-3) var(--space-4);
+    margin-top: 0;
 }

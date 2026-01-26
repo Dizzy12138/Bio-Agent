@@ -1,0 +1,227 @@
+/* =============================================
+   PathwayMap - 代谢通路图样式
+   ============================================= */
+
+.pathway-map {
+    position: relative;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-xl);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    min-height: 400px;
+}
+
+.pathway-map--loading,
+.pathway-map--empty {
+    align-items: center;
+    justify-content: center;
+}
+
+.pathway-map__skeleton {
+    width: 80%;
+    height: 300px;
+    background: linear-gradient(90deg, var(--bg-secondary) 25%, var(--bg-tertiary) 50%, var(--bg-secondary) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: var(--radius-lg);
+}
+
+.pathway-map__empty-icon {
+    font-size: 4rem;
+    margin-bottom: var(--space-4);
+    opacity: 0.5;
+}
+
+.pathway-map--empty h3 {
+    font-size: var(--text-lg);
+    color: var(--text-primary);
+    margin: 0 0 var(--space-2);
+}
+
+.pathway-map--empty p {
+    color: var(--text-muted);
+    margin: 0;
+}
+
+/* 头部 */
+.pathway-map__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-3) var(--space-4);
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.pathway-map__title h4 {
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.pathway-map__completeness {
+    font-size: var(--text-xs);
+    color: var(--accent-500);
+    background: var(--accent-50);
+    padding: 2px 8px;
+    border-radius: var(--radius-full);
+    margin-left: var(--space-2);
+}
+
+.pathway-map__controls {
+    display: flex;
+    gap: var(--space-2);
+}
+
+.pathway-map__controls button {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.pathway-map__controls button:hover {
+    border-color: var(--accent-400);
+    color: var(--accent-500);
+}
+
+/* 画布 */
+.pathway-map__canvas {
+    flex: 1;
+    display: block;
+}
+
+/* 悬浮提示 */
+.pathway-map__tooltip {
+    position: absolute;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: var(--space-3);
+    box-shadow: var(--shadow-lg);
+    pointer-events: none;
+    z-index: 100;
+    min-width: 150px;
+    animation: fadeIn var(--transition-fast);
+}
+
+.pathway-map__tooltip-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-2);
+}
+
+.pathway-map__tooltip-type {
+    font-size: 10px;
+    font-weight: 600;
+    color: white;
+    padding: 2px 6px;
+    border-radius: var(--radius-sm);
+    text-transform: uppercase;
+}
+
+.pathway-map__tooltip-status {
+    font-size: var(--text-xs);
+    font-weight: 500;
+}
+
+.pathway-map__tooltip-status.present {
+    color: var(--success-500);
+}
+
+.pathway-map__tooltip-status.absent {
+    color: var(--text-muted);
+}
+
+.pathway-map__tooltip-label {
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.pathway-map__tooltip-id {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+    margin-top: var(--space-1);
+}
+
+/* 图例 */
+.pathway-map__legend {
+    position: absolute;
+    bottom: var(--space-4);
+    left: var(--space-4);
+    display: flex;
+    gap: var(--space-4);
+    padding: var(--space-3);
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(8px);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+}
+
+.pathway-map__legend-section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+}
+
+.pathway-map__legend-title {
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.pathway-map__legend-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--text-xs);
+    color: var(--text-secondary);
+    text-transform: capitalize;
+}
+
+.pathway-map__legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+}
+
+.pathway-map__legend-line {
+    width: 20px;
+    height: 2px;
+}
+
+.pathway-map__legend-line.solid {
+    background: var(--accent-500);
+}
+
+.pathway-map__legend-line.dashed {
+    background: repeating-linear-gradient(90deg,
+            var(--neutral-300) 0px,
+            var(--neutral-300) 4px,
+            transparent 4px,
+            transparent 8px);
+}
+
+/* 深色模式 */
+[data-theme="dark"] .pathway-map__legend {
+    background: rgba(30, 41, 59, 0.95);
+}
+
+[data-theme="dark"] .pathway-map__completeness {
+    background: rgba(33, 150, 243, 0.2);
+}

@@ -32,8 +32,6 @@ export const WorkflowSaveModal: React.FC<WorkflowSaveModalProps> = ({
     const [tagInput, setTagInput] = useState('');
     const [versionNote, setVersionNote] = useState('');
 
-    if (!isOpen) return null;
-
     const handleBackdropClick = (e: React.MouseEvent) => {
         if (e.target === e.currentTarget) {
             onClose();
@@ -171,6 +169,6 @@ export const WorkflowSaveModal: React.FC<WorkflowSaveModalProps> = ({
         </div>
     );
 
-    // 使用 Portal 将模态框渲染到 body
-    return createPortal(modalContent, document.body);
+    // 使用 Portal 将模态框渲染到 body - 仅在打开时渲染
+    return isOpen ? createPortal(modalContent, document.body) : null;
 };

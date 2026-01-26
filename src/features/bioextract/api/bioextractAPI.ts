@@ -203,14 +203,17 @@ export const bioextractAPI = {
         candidates: PolymerCandidate[];
         totalRecords: number;
     }> {
-        await new Promise(resolve => setTimeout(resolve, 800));
+        // Call backend API
+        const response = await fetch(`http://localhost:8000/api/v1/bioextract/atps/filter?inner_phase=${encodeURIComponent(innerPhase)}`);
+        if (!response.ok) {
+            throw new Error('API call failed');
+        }
 
-        const matchedRecords = MOCK_ATPS_RECORDS.filter(
-            r => r.polymer2.toLowerCase() === innerPhase.toLowerCase() ||
-                r.polymer1.toLowerCase() === innerPhase.toLowerCase()
-        );
+        const data = await response.json();
+        const matchedRecords: ATPSRecord[] = data.records;
 
-        // 统计候选聚合物
+        // Stats logic (keep frontend stats for now or move to backend completely)
+        // For now, we process stats on frontend to keep compatibility with existing components
         const polymerStats = new Map<string, {
             count: number;
             records: ATPSRecord[];
@@ -247,7 +250,7 @@ export const bioextractAPI = {
         return {
             records: matchedRecords,
             candidates,
-            totalRecords: MOCK_ATPS_RECORDS.length,
+            totalRecords: data.totalRecords || matchedRecords.length,
         };
     },
 
@@ -406,7 +409,7 @@ function calculateOverallScore(tags: PolymerTag[]): number {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-function getTagExplanation(tag: FunctionalTagType, backbone: string, modifiers: string[]): string {
+function getTagExplanation(tag: FunctionalTagType, backbone: string, _modifiers: string[]): string {
     const explanations: Record<FunctionalTagType, string> = {
         'pH_Stability': `${backbone} 链段在酸性环境稳定；MAA 在 pH<5 时塌缩形成保护层`,
         'Enzyme_Resistance': `${backbone} 链提供空间位阻，阻挡胃蛋白酶接近`,

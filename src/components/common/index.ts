@@ -9,3 +9,6 @@ export type { SelectProps, SelectOption } from './Select';
 
 export { Card, CardHeader, CardBody, CardFooter } from './Card';
 export type { CardProps, CardHeaderProps } from './Card';
+
+export { ToastProvider, useToast } from './Toast';
+export { Modal } from './Modal';

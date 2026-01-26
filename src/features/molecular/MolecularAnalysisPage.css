@@ -1,0 +1,90 @@
+/* =============================================
+   MolecularAnalysisPage - 分子性质分析页面样式
+   ============================================= */
+
+.molecular-analysis-page {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: var(--bg-secondary);
+}
+
+/* 页面头部 */
+.molecular-analysis-page__header {
+    padding: var(--space-4) var(--space-6);
+    background: var(--bg-primary);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.molecular-analysis-page__title h1 {
+    font-size: var(--text-xl);
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0 0 var(--space-1);
+}
+
+.molecular-analysis-page__title p {
+    font-size: var(--text-sm);
+    color: var(--text-muted);
+    margin: 0;
+}
+
+/* 主内容区 */
+.molecular-analysis-page__content {
+    flex: 1;
+    display: flex;
+    gap: var(--space-4);
+    padding: var(--space-4);
+    overflow: hidden;
+}
+
+/* 左侧分子可视化 */
+.molecular-analysis-page__viewer-section {
+    flex: 1;
+    min-width: 400px;
+    display: flex;
+}
+
+.molecular-analysis-page__viewer-section>* {
+    flex: 1;
+}
+
+/* 右侧分析区 */
+.molecular-analysis-page__analysis-section {
+    width: 420px;
+    min-width: 380px;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    overflow-y: auto;
+}
+
+/* 响应式布局 */
+@media (max-width: 1200px) {
+    .molecular-analysis-page__content {
+        flex-direction: column;
+    }
+
+    .molecular-analysis-page__viewer-section {
+        min-width: unset;
+        min-height: 350px;
+    }
+
+    .molecular-analysis-page__analysis-section {
+        width: 100%;
+        min-width: unset;
+        flex-direction: row;
+        flex-wrap: wrap;
+        overflow-x: auto;
+    }
+
+    .molecular-analysis-page__analysis-section>* {
+        flex: 1 1 300px;
+    }
+}
+
+/* 深色模式 */
+[data-theme="dark"] .molecular-analysis-page__header {
+    background: var(--bg-dark-secondary);
+}

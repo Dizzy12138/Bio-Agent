@@ -1,0 +1,78 @@
+/* =============================================
+   InteractiveQueryPage - 交互式查询页面样式
+   ============================================= */
+
+.interactive-query-page {
+    display: flex;
+    height: 100%;
+    overflow: hidden;
+    background: var(--bg-secondary);
+}
+
+/* 右侧内容区 */
+.interactive-query-page__content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: var(--bg-primary);
+}
+
+/* 页面头部 */
+.interactive-query-page__header {
+    padding: var(--space-6) var(--space-6) var(--space-4);
+    background: linear-gradient(135deg, var(--bg-primary), var(--bg-secondary));
+    border-bottom: 1px solid var(--border-color);
+}
+
+.interactive-query-page__title h1 {
+    font-size: var(--text-2xl);
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0 0 var(--space-2);
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.interactive-query-page__title p {
+    font-size: var(--text-sm);
+    color: var(--text-muted);
+    margin: 0;
+}
+
+/* 页面底部 */
+.interactive-query-page__footer {
+    padding: var(--space-3) var(--space-4);
+    background: var(--bg-secondary);
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.interactive-query-page__pagination-info {
+    font-size: var(--text-sm);
+    color: var(--text-muted);
+}
+
+/* 响应式布局 */
+@media (max-width: 1024px) {
+    .interactive-query-page {
+        flex-direction: column;
+    }
+
+    .faceted-search {
+        width: 100%;
+        min-width: unset;
+        height: auto;
+        max-height: 300px;
+        border-right: none;
+        border-bottom: 1px solid var(--border-color);
+    }
+}
+
+/* 深色模式增强 */
+[data-theme="dark"] .interactive-query-page__header {
+    background: linear-gradient(135deg, var(--bg-dark-primary), var(--bg-dark-secondary));
+}

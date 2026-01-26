@@ -15,7 +15,7 @@ export const CategoryTree: React.FC<CategoryTreeProps> = ({
 }) => {
     return (
         <div className="category-tree">
-            {categories.map(category => (
+            {categories?.map(category => (
                 <CategoryNodeItem
                     key={category.id}
                     node={category}

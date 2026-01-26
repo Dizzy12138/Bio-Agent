@@ -4,7 +4,7 @@
  */
 
 // 组件
-export { BioExtractChat, LLMConfigModal, ThinkingProcess } from './components';
+export { BioExtractChat, ThinkingProcess } from './components';
 
 // Store
 export { useBioExtractStore } from './stores/bioextractStore';

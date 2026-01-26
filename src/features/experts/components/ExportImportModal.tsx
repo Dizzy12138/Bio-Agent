@@ -109,8 +109,6 @@ export const ExportImportModal: React.FC<ExportImportModalProps> = ({
         }
     };
 
-    if (!isOpen) return null;
-
     const modalContent = (
         <div className="export-import-overlay" onClick={onClose}>
             <div className="export-import-modal" onClick={e => e.stopPropagation()}>
@@ -327,5 +325,5 @@ export const ExportImportModal: React.FC<ExportImportModalProps> = ({
         </div>
     );
 
-    return createPortal(modalContent, document.body);
+    return isOpen ? createPortal(modalContent, document.body) : null;
 };

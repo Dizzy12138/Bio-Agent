@@ -6,7 +6,8 @@ import { ExpertEditModal } from './components/ExpertEditModal';
 import { TemplateGallery } from './components/TemplateGallery';
 import { ExportImportModal } from './components/ExportImportModal';
 import type { Expert } from './types';
-import './ExpertManager.css';
+import { Plus, Users } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 // Mock 专家数据
 const mockExperts: Expert[] = [
@@ -149,10 +150,12 @@ export const ExpertManager: React.FC = () => {
         }
     };
 
+    const navigate = useNavigate();
+
     const handleStartChat = (expert: Expert) => {
-        // TODO: 跳转到对话界面并激活该专家
+        // TODO: Pass expert context to chat
         console.log('Start chat with:', expert.name);
-        alert(`将跳转到对话界面，与 ${expert.name} 开始对话`);
+        navigate('/chat');
     };
 
     const filteredExperts = experts.filter(expert =>
@@ -165,7 +168,7 @@ export const ExpertManager: React.FC = () => {
     const customExperts = filteredExperts.filter(e => !e.isSystem);
 
     return (
-        <div className="expert-manager">
+        <div className="flex h-[calc(100vh-64px)] overflow-hidden bg-gray-50">
             {/* Left Panel - Expert List */}
             <ExpertList
                 systemExperts={systemExperts}
@@ -179,27 +182,31 @@ export const ExpertManager: React.FC = () => {
             />
 
             {/* Main Content */}
-            <div className="expert-main">
+            <main className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
                 {viewMode === 'creation' ? (
-                    <ExpertCreation
-                        onComplete={handleExpertCreated}
-                        onCancel={handleCancelCreation}
-                    />
+                    <div className="flex-1 overflow-y-auto p-6">
+                        <ExpertCreation
+                            onComplete={handleExpertCreated}
+                            onCancel={handleCancelCreation}
+                        />
+                    </div>
                 ) : viewMode === 'detail' && selectedExpert ? (
-                    <ExpertDetail
-                        expert={selectedExpert}
-                        onEdit={handleEditExpert}
-                        onDelete={handleDeleteExpert}
-                        onStartChat={handleStartChat}
-                        onExport={(expert: Expert) => {
-                            setExportingExpert(expert);
-                            setIsExportModalOpen(true);
-                        }}
-                    />
+                    <div className="flex-1 overflow-y-auto p-6">
+                        <ExpertDetail
+                            expert={selectedExpert}
+                            onEdit={handleEditExpert}
+                            onDelete={handleDeleteExpert}
+                            onStartChat={handleStartChat}
+                            onExport={(expert: Expert) => {
+                                setExportingExpert(expert);
+                                setIsExportModalOpen(true);
+                            }}
+                        />
+                    </div>
                 ) : (
                     <EmptyState onCreateExpert={handleCreateExpert} />
                 )}
-            </div>
+            </main>
 
             {/* Edit Modal */}
             {editingExpert && (
@@ -239,25 +246,25 @@ export const ExpertManager: React.FC = () => {
 
 // Empty State Component
 const EmptyState: React.FC<{ onCreateExpert: () => void }> = ({ onCreateExpert }) => (
-    <div className="expert-empty-state">
-        <div className="expert-empty-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                <circle cx="12" cy="8" r="4" />
-                <path d="M4 20c0-4 4-6 8-6s8 2 8 6" />
-                <path d="M16 4l2 2-2 2M20 4l-2 2 2 2" />
-            </svg>
+    <div className="flex-1 flex items-center justify-center p-8 text-center">
+        <div className="max-w-md w-full space-y-6">
+            <div className="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mx-auto text-blue-500">
+                <Users size={40} />
+            </div>
+            <div className="space-y-2">
+                <h3 className="text-xl font-bold text-gray-900">选择或创建专家</h3>
+                <p className="text-gray-500 leading-relaxed">
+                    从左侧选择一位专家查看详情，或者通过对话创建您自己的领域专家。
+                    专家将帮助您在特定领域提供专业的分析和建议。
+                </p>
+            </div>
+            <button
+                onClick={onCreateExpert}
+                className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm font-medium"
+            >
+                <Plus size={20} />
+                创建新专家
+            </button>
         </div>
-        <h3 className="expert-empty-title">选择或创建专家</h3>
-        <p className="expert-empty-description">
-            从左侧选择一位专家查看详情，或者通过对话创建您自己的领域专家。
-            专家将帮助您在特定领域提供专业的分析和建议。
-        </p>
-        <button className="btn btn-primary" onClick={onCreateExpert}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: 18, height: 18 }}>
-                <line x1="12" y1="5" x2="12" y2="19" />
-                <line x1="5" y1="12" x2="19" y2="12" />
-            </svg>
-            创建新专家
-        </button>
     </div>
 );

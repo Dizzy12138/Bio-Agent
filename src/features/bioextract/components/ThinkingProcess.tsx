@@ -1,11 +1,6 @@
-/**
- * Agent 思考过程展示组件
- * 显示 Agent 的推理步骤和思维链
- */
-
 import React from 'react';
 import type { ThinkingStep, ThinkingStepType } from '../agent';
-import './ThinkingProcess.css';
+import { Brain, Search, LayoutList, Database, Wrench, Zap, Eye, MessageSquare, ChevronDown, ChevronUp } from 'lucide-react';
 
 interface ThinkingProcessProps {
     steps: ThinkingStep[];
@@ -16,44 +11,67 @@ interface ThinkingProcessProps {
 
 // 步骤类型配置
 const STEP_CONFIG: Record<ThinkingStepType, {
-    icon: string;
+    icon: React.ReactNode;
     label: string;
-    color: string;
+    bg: string;
+    text: string;
+    border: string;
 }> = {
     analyzing: {
-        icon: '🔍',
+        icon: <Search size={14} />,
         label: '意图分析',
-        color: '#6366f1', // 紫色
+        bg: 'bg-indigo-50',
+        text: 'text-indigo-600',
+        border: 'border-indigo-200'
     },
     planning: {
-        icon: '📋',
+        icon: <LayoutList size={14} />,
         label: '执行规划',
-        color: '#0ea5e9', // 蓝色
+        bg: 'bg-blue-50',
+        text: 'text-blue-600',
+        border: 'border-blue-200'
     },
     querying: {
-        icon: '🗃️',
+        icon: <Database size={14} />,
         label: 'SQL 生成',
-        color: '#22c55e', // 绿色
+        bg: 'bg-green-50',
+        text: 'text-green-600',
+        border: 'border-green-200'
+    },
+    tool_calling: {
+        icon: <Wrench size={14} />,
+        label: '工具调用',
+        bg: 'bg-fuchsia-50',
+        text: 'text-fuchsia-600',
+        border: 'border-fuchsia-200'
     },
     executing: {
-        icon: '⚡',
-        label: '执行查询',
-        color: '#f59e0b', // 橙色
+        icon: <Zap size={14} />,
+        label: '执行操作',
+        bg: 'bg-amber-50',
+        text: 'text-amber-600',
+        border: 'border-amber-200'
     },
     observing: {
-        icon: '👀',
+        icon: <Eye size={14} />,
         label: '观察结果',
-        color: '#10b981', // 绿色
+        bg: 'bg-emerald-50',
+        text: 'text-emerald-600',
+        border: 'border-emerald-200'
     },
     reasoning: {
-        icon: '🧠',
+        icon: <Brain size={14} />,
         label: '推理分析',
-        color: '#8b5cf6', // 紫色
+        bg: 'bg-violet-50',
+        text: 'text-violet-600',
+        border: 'border-violet-200'
     },
     responding: {
-        icon: '💬',
+        icon: <MessageSquare size={14} />,
         label: '生成回复',
-        color: '#ec4899', // 粉色
+        bg: 'bg-pink-50',
+        text: 'text-pink-600',
+        border: 'border-pink-200'
     },
 };
 
@@ -68,52 +86,58 @@ export const ThinkingProcess: React.FC<ThinkingProcessProps> = ({
         return null;
     }
 
-    // 调试日志
-    console.log('[ThinkingProcess] Rendering:', { stepsCount: steps.length, isThinking, collapsed });
-
     return (
-        <div className={`thinking-process ${collapsed ? 'collapsed' : ''}`}>
+        <div className={`mt-4 mb-6 border rounded-xl overflow-hidden transition-all duration-300 ${collapsed ? 'bg-white border-gray-100' : 'bg-gray-50/50 border-gray-200'}`}>
             {/* 头部 */}
-            <div className="thinking-header" onClick={onToggle}>
-                <div className="thinking-title">
-                    <span className="thinking-icon">🧠</span>
+            <div
+                className="flex items-center justify-between px-4 py-2 cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors"
+                onClick={onToggle}
+            >
+                <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                    <Brain size={16} className="text-purple-500" />
                     <span>Agent 思考过程</span>
-                    {isThinking && <span className="thinking-indicator">思考中...</span>}
+                    {isThinking && (
+                        <span className="flex items-center gap-1 text-xs text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full">
+                            <span className="w-1.5 h-1.5 bg-purple-500 rounded-full animate-pulse"></span>
+                            思考中...
+                        </span>
+                    )}
                 </div>
-                <button className="toggle-btn">
-                    {collapsed ? '展开' : '收起'}
+                <button className="text-gray-400 hover:text-gray-600">
+                    {collapsed ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
                 </button>
             </div>
 
             {/* 步骤列表 */}
             {!collapsed && (
-                <div className="thinking-steps">
+                <div className="p-4 space-y-4">
                     {steps.map((step, index) => {
-                        const config = STEP_CONFIG[step.type];
+                        const config = STEP_CONFIG[step.type] || STEP_CONFIG.analyzing;
                         return (
-                            <div
-                                key={step.id}
-                                className="thinking-step"
-                                style={{ '--step-color': config.color } as React.CSSProperties}
-                            >
+                            <div key={step.id} className="relative pl-6">
                                 {/* 时间线连接器 */}
-                                <div className="step-timeline">
-                                    <div className="step-dot" />
-                                    {index < steps.length - 1 && <div className="step-line" />}
-                                </div>
+                                <div className="absolute left-[3px] top-7 bottom-0 w-0.5 bg-gray-200 -z-10 last:hidden"></div>
+                                <div className={`absolute left-0 top-1.5 w-2 h-2 rounded-full ${config.text.replace('text-', 'bg-')}`}></div>
 
-                                {/* 步骤内容 */}
-                                <div className="step-content">
-                                    <div className="step-header">
-                                        <span className="step-icon">{config.icon}</span>
-                                        <span className="step-label">{config.label}</span>
+                                <div className={`rounded-lg border ${config.bg} ${config.border} p-3`}>
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <span className={`${config.text}`}>{config.icon}</span>
+                                        <span className={`text-xs font-bold ${config.text} uppercase tracking-wider`}>{config.label}</span>
                                     </div>
-                                    <div className="step-text">{step.content}</div>
+                                    <div className="text-sm text-gray-800 leading-relaxed whitespace-pre-wrap">{step.content}</div>
 
                                     {/* SQL 显示 */}
-                                    {step.metadata?.sql && (
-                                        <div className="step-sql">
-                                            <pre><code>{String(step.metadata.sql)}</code></pre>
+                                    {typeof step.metadata?.sql === 'string' && (
+                                        <div className="mt-2 bg-gray-900 rounded-lg p-3 text-xs font-mono text-gray-300 overflow-x-auto">
+                                            {step.metadata.sql}
+                                        </div>
+                                    )}
+
+                                    {/* Tool Call Params 显示 */}
+                                    {typeof step.metadata?.tool === 'string' && step.metadata?.params && (
+                                        <div className="mt-2 bg-white/50 rounded-lg p-2 text-xs font-mono text-gray-600 border border-black/5 overflow-x-auto">
+                                            <div className="text-[10px] text-gray-400 mb-1">PARAMS:</div>
+                                            {JSON.stringify(step.metadata.params, null, 2)}
                                         </div>
                                     )}
                                 </div>
@@ -123,24 +147,19 @@ export const ThinkingProcess: React.FC<ThinkingProcessProps> = ({
 
                     {/* 思考中的占位 */}
                     {isThinking && (
-                        <div className="thinking-step loading">
-                            <div className="step-timeline">
-                                <div className="step-dot pulsing" />
-                            </div>
-                            <div className="step-content">
-                                <div className="loading-dots">
-                                    <span></span>
-                                    <span></span>
-                                    <span></span>
-                                </div>
+                        <div className="relative pl-6">
+                            <div className="absolute left-[3px] top-0 bottom-0 w-0.5 bg-gray-200 -z-10"></div>
+                            <div className="absolute left-0 top-1.5 w-2 h-2 rounded-full bg-purple-400 animate-ping"></div>
+
+                            <div className="flex gap-1 h-6 items-center px-4 bg-white border border-gray-200 rounded-lg w-fit">
+                                <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce [animation-delay:-0.3s]"></span>
+                                <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce [animation-delay:-0.15s]"></span>
+                                <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce"></span>
                             </div>
                         </div>
                     )}
                 </div>
-            )
-            }
-        </div >
+            )}
+        </div>
     );
 };
-
-export default ThinkingProcess;

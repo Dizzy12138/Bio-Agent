@@ -1,0 +1,98 @@
+/* =============================================
+   WordCloud - 词云样式
+   ============================================= */
+
+.word-cloud {
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: var(--space-4);
+}
+
+.word-cloud--loading,
+.word-cloud--empty {
+    min-height: 150px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.word-cloud--empty {
+    text-align: center;
+    color: var(--text-muted);
+}
+
+.word-cloud__empty-icon {
+    font-size: 2.5rem;
+    margin-bottom: var(--space-2);
+    opacity: 0.5;
+}
+
+.word-cloud--empty p {
+    margin: 0;
+    font-size: var(--text-sm);
+}
+
+/* 头部 */
+.word-cloud__header {
+    margin-bottom: var(--space-3);
+}
+
+.word-cloud__header h4 {
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+/* 词云内容 */
+.word-cloud__content {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    justify-content: center;
+    align-items: center;
+    min-height: 100px;
+}
+
+.word-cloud__word {
+    background: transparent;
+    border: none;
+    padding: var(--space-1) var(--space-2);
+    cursor: pointer;
+    font-weight: 500;
+    transition: all var(--transition-fast);
+    border-radius: var(--radius-sm);
+    animation: fadeIn var(--transition-normal) backwards;
+}
+
+.word-cloud__word:hover {
+    background: var(--bg-secondary);
+    transform: scale(1.1);
+}
+
+/* 骨架屏 */
+.word-cloud__skeleton {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    justify-content: center;
+}
+
+.word-cloud__skeleton-word {
+    height: 24px;
+    background: linear-gradient(90deg, var(--bg-secondary) 25%, var(--bg-tertiary) 50%, var(--bg-secondary) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: var(--radius-md);
+}
+
+/* 深色模式 */
+[data-theme="dark"] .word-cloud {
+    background: var(--bg-dark-secondary);
+}
+
+[data-theme="dark"] .word-cloud__word:hover {
+    background: var(--bg-dark-tertiary);
+}

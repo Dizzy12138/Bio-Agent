@@ -1,0 +1,303 @@
+/* =============================================
+   DataTable - 动态数据表格样式
+   ============================================= */
+
+.data-table {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: var(--bg-primary);
+}
+
+.data-table__container {
+    flex: 1;
+    overflow: auto;
+}
+
+.data-table__table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: var(--text-sm);
+}
+
+/* 表头 */
+.data-table__th {
+    position: sticky;
+    top: 0;
+    background: var(--bg-secondary);
+    padding: var(--space-3) var(--space-4);
+    text-align: left;
+    font-weight: 600;
+    color: var(--text-secondary);
+    border-bottom: 2px solid var(--border-color);
+    white-space: nowrap;
+    z-index: 10;
+}
+
+.data-table__th--checkbox {
+    width: 48px;
+    text-align: center;
+}
+
+.data-table__th--actions {
+    width: 100px;
+    text-align: center;
+}
+
+.data-table__th-content {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.data-table__th.sortable {
+    cursor: pointer;
+}
+
+.data-table__sort-btn {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    background: transparent;
+    border: none;
+    font: inherit;
+    font-weight: 600;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 0;
+    transition: color var(--transition-fast);
+}
+
+.data-table__sort-btn:hover {
+    color: var(--text-primary);
+}
+
+.sort-icon {
+    opacity: 0.4;
+    transition: opacity var(--transition-fast);
+}
+
+.sort-icon.active {
+    opacity: 1;
+    color: var(--accent-500);
+}
+
+.data-table__th:hover .sort-icon.inactive {
+    opacity: 0.7;
+}
+
+/* 列宽调整手柄 */
+.data-table__resize-handle {
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: col-resize;
+    color: var(--text-muted);
+    opacity: 0;
+    transition: opacity var(--transition-fast);
+}
+
+.data-table__th:hover .data-table__resize-handle {
+    opacity: 1;
+}
+
+.data-table__resize-handle.active {
+    opacity: 1;
+    color: var(--accent-500);
+}
+
+/* 数据行 */
+.data-table__tr {
+    transition: background var(--transition-fast);
+    cursor: pointer;
+}
+
+.data-table__tr:hover {
+    background: var(--bg-secondary);
+}
+
+.data-table__tr.selected {
+    background: var(--accent-50);
+}
+
+.data-table__tr.selected:hover {
+    background: var(--accent-100);
+}
+
+/* 数据单元格 */
+.data-table__td {
+    padding: var(--space-3) var(--space-4);
+    border-bottom: 1px solid var(--border-color);
+    color: var(--text-primary);
+    vertical-align: middle;
+}
+
+.data-table__td--checkbox {
+    text-align: center;
+}
+
+.data-table__td--actions {
+    text-align: center;
+}
+
+/* 复选框样式 */
+.data-table__checkbox-wrapper {
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+.data-table__checkbox-wrapper input {
+    display: none;
+}
+
+.data-table__checkbox {
+    width: 18px;
+    height: 18px;
+    border: 2px solid var(--neutral-400);
+    border-radius: var(--radius-sm);
+    position: relative;
+    transition: all var(--transition-fast);
+}
+
+.data-table__checkbox-wrapper:hover .data-table__checkbox {
+    border-color: var(--accent-400);
+}
+
+.data-table__checkbox-wrapper input:checked+.data-table__checkbox {
+    background: var(--accent-500);
+    border-color: var(--accent-500);
+}
+
+.data-table__checkbox-wrapper input:checked+.data-table__checkbox::after {
+    content: '';
+    position: absolute;
+    left: 5px;
+    top: 2px;
+    width: 4px;
+    height: 8px;
+    border: solid white;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+}
+
+/* 操作按钮 */
+.data-table__actions {
+    display: flex;
+    justify-content: center;
+    gap: var(--space-2);
+}
+
+.data-table__action-btn {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: var(--radius-md);
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.data-table__action-btn:hover {
+    background: var(--bg-tertiary);
+    border-color: var(--border-color);
+    color: var(--accent-500);
+}
+
+/* 分子单元格 */
+.cell-molecule {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.molecule-formula {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    background: var(--bg-tertiary);
+    padding: 2px 6px;
+    border-radius: var(--radius-sm);
+}
+
+/* Loading 骨架屏 */
+.data-table__loading {
+    flex: 1;
+    padding: var(--space-4);
+}
+
+.data-table__skeleton {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+.skeleton-row {
+    display: flex;
+    gap: var(--space-4);
+}
+
+.skeleton-cell {
+    height: 40px;
+    background: linear-gradient(90deg, var(--bg-secondary) 25%, var(--bg-tertiary) 50%, var(--bg-secondary) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: var(--radius-md);
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: 200% 0;
+    }
+
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+/* Empty 空状态 */
+.data-table__empty {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-12);
+    text-align: center;
+}
+
+.data-table__empty-icon {
+    font-size: 4rem;
+    margin-bottom: var(--space-4);
+    opacity: 0.5;
+}
+
+.data-table__empty h3 {
+    font-size: var(--text-lg);
+    color: var(--text-primary);
+    margin-bottom: var(--space-2);
+}
+
+.data-table__empty p {
+    color: var(--text-muted);
+    margin: 0;
+}
+
+/* 深色模式 */
+[data-theme="dark"] .data-table__tr.selected {
+    background: rgba(33, 150, 243, 0.15);
+}
+
+[data-theme="dark"] .data-table__tr.selected:hover {
+    background: rgba(33, 150, 243, 0.2);
+}

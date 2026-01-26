@@ -1,8 +1,13 @@
 // Node Types
 export type NodeType = 'start' | 'llm' | 'tool' | 'router' | 'output';
 
+// Base interface for all node data - required for @xyflow/react compatibility
+interface BaseNodeData {
+  [key: string]: unknown;
+}
+
 // Start Node
-export interface StartNodeData {
+export interface StartNodeData extends BaseNodeData {
   label: string;
   inputVariables: InputVariable[];
   triggerType: 'manual' | 'scheduled' | 'api';
@@ -18,7 +23,7 @@ export interface InputVariable {
 }
 
 // LLM Reasoning Node
-export interface LLMNodeData {
+export interface LLMNodeData extends BaseNodeData {
   label: string;
   model: 'gpt-4' | 'gpt-4o' | 'claude-3.5-sonnet' | 'llama-3' | 'gemini-pro';
   systemPrompt: string;
@@ -30,7 +35,7 @@ export interface LLMNodeData {
 }
 
 // Scientific Tool Node
-export interface ToolNodeData {
+export interface ToolNodeData extends BaseNodeData {
   label: string;
   toolId: string;
   toolName: string;
@@ -40,7 +45,7 @@ export interface ToolNodeData {
 }
 
 // Router Node
-export interface RouterNodeData {
+export interface RouterNodeData extends BaseNodeData {
   label: string;
   routingStrategy: 'intent' | 'condition' | 'llm';
   routes: Route[];
@@ -55,7 +60,7 @@ export interface Route {
 }
 
 // Output Node
-export interface OutputNodeData {
+export interface OutputNodeData extends BaseNodeData {
   label: string;
   outputType: 'text' | 'markdown' | 'json' | 'generative-ui';
   template?: string;
@@ -69,12 +74,13 @@ export interface UIComponentConfig {
 }
 
 // Union type for all node data
-export type CustomNodeData = 
-  | StartNodeData 
-  | LLMNodeData 
-  | ToolNodeData 
-  | RouterNodeData 
+export type CustomNodeData =
+  | StartNodeData
+  | LLMNodeData
+  | ToolNodeData
+  | RouterNodeData
   | OutputNodeData;
+
 
 // Workflow Types
 export interface Workflow {

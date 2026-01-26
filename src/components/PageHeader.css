@@ -1,0 +1,78 @@
+/* =============================================
+   PageHeader - 通用页面头部样式
+   ============================================= */
+
+.page-header {
+    height: 88px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 var(--space-6);
+    background: var(--bg-primary);
+    border-bottom: 1px solid var(--border-color);
+    gap: var(--space-4);
+    flex-shrink: 0;
+}
+
+.page-header__info {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+}
+
+.page-header__icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    font-size: 1.75rem;
+    background: linear-gradient(135deg, var(--primary-50), var(--accent-50));
+    border: 1px solid var(--primary-100);
+    border-radius: var(--radius-xl);
+}
+
+.page-header__text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.page-header__title {
+    font-size: var(--text-xl);
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0;
+    line-height: 1.2;
+}
+
+.page-header__subtitle {
+    font-size: var(--text-sm);
+    color: var(--text-muted);
+    margin: 0;
+}
+
+.page-header__actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+/* 响应式 */
+@media (max-width: 768px) {
+    .page-header {
+        flex-direction: column;
+        align-items: stretch;
+        padding: var(--space-4);
+    }
+
+    .page-header__actions {
+        width: 100%;
+    }
+}
+
+/* 深色模式 */
+[data-theme="dark"] .page-header__icon {
+    background: linear-gradient(135deg, rgba(76, 175, 80, 0.15), rgba(33, 150, 243, 0.1));
+    border-color: rgba(76, 175, 80, 0.3);
+}

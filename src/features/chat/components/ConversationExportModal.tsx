@@ -75,8 +75,6 @@ export const ConversationExportModal: React.FC<ConversationExportModalProps> = (
         }, 300);
     };
 
-    if (!isOpen || !conversation) return null;
-
     const modalContent = (
         <div className="conv-export-overlay" onClick={onClose}>
             <div className="conv-export-modal" onClick={e => e.stopPropagation()}>
@@ -98,12 +96,12 @@ export const ConversationExportModal: React.FC<ConversationExportModalProps> = (
                 <div className="export-preview">
                     <div className="preview-info">
                         <span className="preview-avatar">
-                            {conversation.expertAvatar || '💬'}
+                            {conversation?.expertAvatar || '💬'}
                         </span>
                         <div>
-                            <div className="preview-title">{conversation.title}</div>
+                            <div className="preview-title">{conversation?.title}</div>
                             <div className="preview-meta">
-                                {conversation.expertName && (
+                                {conversation?.expertName && (
                                     <span>{conversation.expertName} · </span>
                                 )}
                                 <span>{messages.length} 条消息</span>
@@ -166,5 +164,5 @@ export const ConversationExportModal: React.FC<ConversationExportModalProps> = (
         </div>
     );
 
-    return createPortal(modalContent, document.body);
+    return (isOpen && conversation) ? createPortal(modalContent, document.body) : null;
 };

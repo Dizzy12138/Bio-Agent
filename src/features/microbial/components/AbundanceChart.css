@@ -1,0 +1,224 @@
+/* =============================================
+   AbundanceChart - 丰度柱状图样式
+   ============================================= */
+
+.abundance-chart {
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+}
+
+.abundance-chart--loading,
+.abundance-chart--empty {
+    min-height: 250px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-6);
+}
+
+.abundance-chart__empty-icon {
+    font-size: 3rem;
+    margin-bottom: var(--space-3);
+    opacity: 0.5;
+}
+
+.abundance-chart--empty p {
+    color: var(--text-muted);
+    font-size: var(--text-sm);
+    margin: 0;
+}
+
+/* 骨架屏 */
+.abundance-chart__skeleton {
+    display: flex;
+    align-items: flex-end;
+    gap: var(--space-3);
+    height: 150px;
+}
+
+.abundance-chart__skeleton-bar {
+    width: 40px;
+    background: linear-gradient(0deg, var(--bg-secondary) 25%, var(--bg-tertiary) 50%, var(--bg-secondary) 75%);
+    background-size: 100% 200%;
+    animation: shimmerVertical 1.5s infinite;
+    border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+}
+
+@keyframes shimmerVertical {
+    0% {
+        background-position: 0 200%;
+    }
+
+    100% {
+        background-position: 0 -200%;
+    }
+}
+
+/* 头部 */
+.abundance-chart__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-3) var(--space-4);
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.abundance-chart__title h4 {
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.abundance-chart__microbe {
+    font-size: var(--text-xs);
+    color: var(--accent-500);
+    background: var(--accent-50);
+    padding: 2px 8px;
+    border-radius: var(--radius-full);
+    margin-left: var(--space-2);
+}
+
+.abundance-chart__avg {
+    font-size: var(--text-sm);
+    color: var(--text-muted);
+}
+
+.abundance-chart__avg strong {
+    color: var(--text-primary);
+}
+
+/* 图表内容 */
+.abundance-chart__content {
+    position: relative;
+    padding: var(--space-4);
+    padding-left: var(--space-10);
+    min-height: 200px;
+}
+
+/* 柱状图 */
+.abundance-chart__bars {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-around;
+    height: 150px;
+    gap: var(--space-2);
+}
+
+.abundance-chart__bar-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-2);
+    flex: 1;
+    max-width: 60px;
+    height: 100%;
+}
+
+.abundance-chart__bar {
+    width: 100%;
+    min-height: 4px;
+    border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+    position: relative;
+    animation: growUp 0.5s ease-out backwards;
+    transition: filter var(--transition-fast);
+}
+
+.abundance-chart__bar:hover {
+    filter: brightness(1.1);
+}
+
+@keyframes growUp {
+    from {
+        height: 0;
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+.abundance-chart__bar-value {
+    position: absolute;
+    top: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--text-primary);
+    white-space: nowrap;
+    opacity: 0;
+    transition: opacity var(--transition-fast);
+}
+
+.abundance-chart__bar:hover .abundance-chart__bar-value {
+    opacity: 1;
+}
+
+.abundance-chart__bar-label {
+    font-size: 10px;
+    color: var(--text-muted);
+    text-align: center;
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    transform: rotate(180deg);
+    max-height: 60px;
+    overflow: hidden;
+}
+
+/* Y 轴 */
+.abundance-chart__y-axis {
+    position: absolute;
+    left: 0;
+    top: var(--space-4);
+    bottom: var(--space-10);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    width: var(--space-10);
+    padding-right: var(--space-2);
+}
+
+.abundance-chart__y-tick {
+    font-size: 10px;
+    color: var(--text-muted);
+    text-align: right;
+}
+
+/* 图例 */
+.abundance-chart__legend {
+    display: flex;
+    justify-content: center;
+    gap: var(--space-4);
+    padding: var(--space-3);
+    background: var(--bg-secondary);
+    border-top: 1px solid var(--border-color);
+}
+
+.abundance-chart__legend-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+}
+
+.abundance-chart__legend-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 2px;
+}
+
+/* 深色模式 */
+[data-theme="dark"] .abundance-chart {
+    background: var(--bg-dark-secondary);
+}
+
+[data-theme="dark"] .abundance-chart__microbe {
+    background: rgba(33, 150, 243, 0.2);
+}

@@ -20,7 +20,6 @@ import {
 import {
     BioExtractAgent,
     type ThinkingStep,
-    type AgentContext // 确保 agent.ts 导出了这个接口
 } from '../agent';
 
 // =============================================
@@ -335,7 +334,9 @@ export const useBioExtractStore = create<BioExtractState>((set, get) => ({
                     }
 
                     return rows;
-                }
+                },
+                // 如果需要 OCR，这里应该注入当前文档
+                // activeDocument: get().activeDocument 
             });
 
             get().addLogEntry('result', `>>> AGENT FINISHED: ${result.totalDuration}ms`);

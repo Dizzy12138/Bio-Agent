@@ -1,0 +1,139 @@
+/* =============================================
+   RadarChart - 雷达图样式
+   ============================================= */
+
+.radar-chart {
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: var(--space-4);
+}
+
+.radar-chart--loading,
+.radar-chart--empty {
+    min-height: 300px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.radar-chart--empty p {
+    color: var(--text-muted);
+    font-size: var(--text-sm);
+    margin: 0;
+}
+
+.radar-chart__skeleton {
+    width: 200px;
+    height: 200px;
+    border-radius: 50%;
+    background: linear-gradient(90deg, var(--bg-secondary) 25%, var(--bg-tertiary) 50%, var(--bg-secondary) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+}
+
+/* 头部 */
+.radar-chart__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-4);
+}
+
+.radar-chart__header h4 {
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.radar-chart__status {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--text-sm);
+    font-weight: 600;
+}
+
+.radar-chart__violations {
+    font-weight: 400;
+    font-size: var(--text-xs);
+    opacity: 0.8;
+}
+
+/* SVG 图表 */
+.radar-chart__svg {
+    width: 100%;
+    max-width: 280px;
+    height: auto;
+    margin: 0 auto;
+    display: block;
+}
+
+.radar-chart__svg circle {
+    transition: r var(--transition-fast);
+    cursor: pointer;
+}
+
+.radar-chart__svg circle:hover {
+    r: 8;
+}
+
+/* 详细数据 */
+.radar-chart__details {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    gap: var(--space-2);
+    margin-top: var(--space-4);
+    padding-top: var(--space-4);
+    border-top: 1px solid var(--border-color);
+}
+
+.radar-chart__detail-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: var(--space-2);
+    background: var(--bg-secondary);
+    border-radius: var(--radius-md);
+    text-align: center;
+}
+
+.radar-chart__detail-item.violation {
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.radar-chart__detail-label {
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+}
+
+.radar-chart__detail-value {
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.radar-chart__detail-value small {
+    font-weight: 400;
+    color: var(--text-muted);
+}
+
+.radar-chart__detail-item.violation .radar-chart__detail-value {
+    color: var(--error-500);
+}
+
+.radar-chart__detail-threshold {
+    font-size: 10px;
+    color: var(--text-muted);
+}
+
+/* 深色模式 */
+[data-theme="dark"] .radar-chart {
+    background: var(--bg-dark-secondary);
+}
+
+[data-theme="dark"] .radar-chart__detail-item.violation {
+    background: rgba(239, 68, 68, 0.15);
+}

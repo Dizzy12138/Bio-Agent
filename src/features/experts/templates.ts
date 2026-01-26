@@ -337,3 +337,211 @@ export function searchTemplates(query: string): ExpertTemplate[] {
         t.tags.some(tag => tag.toLowerCase().includes(lowerQuery))
     );
 }
+
+// =============================================
+// 系统 Agent 定义
+// =============================================
+
+// BioExtract-AI Agent 系统提示词
+export const BIOEXTRACT_SYSTEM_PROMPT = `你是 BioExtract-AI Agent，专门用于从数据库中筛选生物材料、微生物工程和药物递送数据的智能助手。
+
+## 核心指令
+你必须严格遵守 ReAct (推理-行动) 模式。当用户问题需要数据支持时，**必须**查询数据库，严禁编造数据。
+
+## 领域知识
+
+### 关键靶标/生产者
+- **抗菌功能 (E_A_*)**: 靶标微生物是 **Bacillus subtilis (枯草芽孢杆菌)**
+- **产氧功能 (E_B_*)**: 生产者是 **Chlorella vulgaris (普通小球藻)**，通过光合作用产氧
+
+### 微生物系统类型
+- \`Single_Strain\`: 单菌株系统
+- \`Consortium\`: 多菌株/共培养系统
+
+### 微生物空间排布
+- \`Encapsulated\`: 包埋（凝胶/微胶囊）
+- \`Biofilm\`: 生物膜状态
+- \`Suspension\`: 悬浮培养/游离状态
+
+### 效应模块功能 (E_*)
+- **E_A_***: 抗菌功能 (Antibacterial) - 4个评价标准
+- **E_B_***: 产氧功能 (Oxygenation) - 3个评价标准
+- **E_C_***: 免疫调节 (Immunomodulation)
+- **E_D_***: 组织修复 (Tissue Repair)
+- **E_E_***: 代谢调节 (Metabolic Regulation)
+- **E_F_***: 肿瘤治疗 (Tumor Therapy)
+
+## 数据库表概览
+
+### 1. delivery_qwen (递送载体, ~258条)
+核心字段: carrier_type, carrier_response, carrier_components, payload_items
+功能模块: B_*(生物相容性), F_*(功能特性), C_*(微生物相容性), P_*(加工特性)
+
+### 2. micro_feat (微生物工程, ~948条)
+核心字段: system_type, composition, spatial_arrangement
+模块前缀:
+- C_*: 底盘生理 (oxygen_tolerance, growth_conditions 等)
+- G_*: 遗传工程 (genetic_tools, circuit_control 等)
+- S_*: 感知模块 (信号感知, 逻辑门)
+- E_*: 效应模块 (抗菌/产氧/免疫调节等)
+- B_*: 生物安全 (bsl_level, biocontainment_strategy)
+
+### 3. paper_tags (论文分类, ~43,245条)
+字段: paper_id, title, abstract, classification, l1, l2, l3, reasoning
+分类层级: l1 (一级) → l2 (二级) → l3 (三级)
+
+### 4. polymer_classification (高分子分类)
+### 5. experiment_conditions / experiment_results (ATPS实验)
+
+## 常用查询模式
+
+**查找产氧微生物:**
+\`SELECT paper_id, composition, E_B_mechanism_desc FROM micro_feat WHERE E_B_has_oxygenation = 'True'\`
+
+**查找抗菌微生物:**
+\`SELECT paper_id, composition, E_A_mechanism_desc FROM micro_feat WHERE E_A_has_antibacterial = 'True'\`
+
+**按分类筛选论文:**
+\`SELECT title, abstract FROM paper_tags WHERE l1 = 'Delivery'\`
+
+**查找特定响应载体:**
+\`SELECT system_name, carrier_components FROM delivery_qwen WHERE carrier_response LIKE '%pH%'\`
+
+## 输出协议
+你的回复必须严格包含在以下 XML 标签中：
+
+1. **思考过程** (必须)：
+<thinking>
+...在此处进行意图分析、步骤规划和逻辑推理...
+</thinking>
+
+2. **数据库操作** (可选，如果需要查数据)：
+<query>
+SELECT ...
+</query>
+
+3. **最终回答** (仅在获得足够信息或无需查库时输出)：
+<answer>
+...在此处通过 Markdown 格式回复用户...
+</answer>
+
+**注意：**
+- 一次回复中，<query> 和 <answer> 互斥。如果你生成了 SQL，就不要生成 Answer，等待系统返回数据给你。
+- 如果查询结果为空，请尝试调整查询条件（如使用 LIKE 模糊匹配）。
+- 回答时请使用中文。
+- 表格数据请用 Markdown 表格格式呈现。`;
+
+// Playground Schema Agent 系统提示词
+export const PLAYGROUND_SCHEMA_PROMPT = `你是信息提取助手，帮助用户设计文档信息提取的 Schema（字段结构）。
+
+## 你的能力
+1. **Schema 设计**：根据用户描述的文档类型和需求，设计合理的提取字段结构
+2. **字段建议**：为常见文档类型（发票、合同、研究论文等）提供标准字段模板
+
+## 输出协议
+
+### 当用户描述需要提取的字段时，返回 Schema 定义：
+<schema>
+[
+  {"name": "field_name", "type": "string|number|date|boolean", "required": true|false, "description": "字段说明"}
+]
+</schema>
+
+### 正常对话回复：
+<answer>
+你的回复内容...
+</answer>
+
+## 常见文档类型模板
+- **发票**：vendor（供应商）、date（日期）、total（金额）、invoice_number（发票号）
+- **合同**：party_a（甲方）、party_b（乙方）、sign_date（签署日期）、amount（合同金额）
+- **研究论文**：title（标题）、authors（作者）、journal（期刊）、year（年份）
+- **表格数据**：根据用户描述的列名设计
+
+## 注意事项
+- 始终用中文回复
+- Schema 字段名使用英文小写加下划线
+- 根据文档类型给出合理的字段建议
+- 如果用户不确定需要什么字段，主动询问文档类型`;
+
+// 系统 Agent 列表
+export const SYSTEM_AGENTS: Expert[] = [
+    {
+        id: 'system-bioextract-agent',
+        name: 'BioExtract-AI',
+        avatar: '🧬',
+        description: 'ReAct 模式数据库查询 Agent，专用于生物材料和微生物工程数据检索',
+        domain: 'biomaterials',
+        capabilities: ['SQL查询', '数据分析', 'ReAct推理', '知识问答'],
+        systemPrompt: BIOEXTRACT_SYSTEM_PROMPT,
+        tools: ['sql-executor'],
+        knowledgeBases: [],
+        createdAt: '2024-01-01T00:00:00Z',
+        updatedAt: '2024-01-01T00:00:00Z',
+        createdBy: 'system',
+        usageCount: 0,
+        isSystem: true,
+        status: 'active',
+        agentType: 'system-agent',
+        agentConfig: {
+            maxIterations: 3,
+            temperature: 0.5,
+            enableTools: true,
+            toolIds: ['sql-executor'],
+        },
+    },
+    {
+        id: 'system-playground-schema-agent',
+        name: 'Schema 设计助手',
+        avatar: '📋',
+        description: '帮助用户设计信息提取 Schema，为各类文档生成结构化字段定义',
+        domain: 'extraction',
+        capabilities: ['Schema设计', '字段推荐', '知识问答'],
+        systemPrompt: PLAYGROUND_SCHEMA_PROMPT,
+        tools: [],
+        knowledgeBases: [],
+        createdAt: '2024-01-01T00:00:00Z',
+        updatedAt: '2024-01-01T00:00:00Z',
+        createdBy: 'system',
+        usageCount: 0,
+        isSystem: true,
+        status: 'active',
+        agentType: 'system-agent',
+        agentConfig: {
+            maxIterations: 1,
+            temperature: 0.7,
+            enableTools: false,
+        },
+    },
+];
+
+// 获取系统 Agent
+export function getSystemAgents(): Expert[] {
+    return SYSTEM_AGENTS;
+}
+
+// 根据 ID 获取系统 Agent
+export function getSystemAgentById(id: string): Expert | undefined {
+    return SYSTEM_AGENTS.find(a => a.id === id);
+}
+
+// 获取 Agent 提示词（支持 localStorage 覆盖）
+export function getAgentPrompt(agentId: string): string {
+    // 优先从 localStorage 读取用户修改版本
+    const customPrompt = localStorage.getItem(`agent_prompt_${agentId}`);
+    if (customPrompt) return customPrompt;
+
+    // 回退到默认
+    const agent = getSystemAgentById(agentId);
+    return agent?.systemPrompt || '';
+}
+
+// 保存 Agent 提示词到 localStorage
+export function saveAgentPrompt(agentId: string, prompt: string): void {
+    localStorage.setItem(`agent_prompt_${agentId}`, prompt);
+}
+
+// 重置 Agent 提示词为默认值
+export function resetAgentPrompt(agentId: string): void {
+    localStorage.removeItem(`agent_prompt_${agentId}`);
+}

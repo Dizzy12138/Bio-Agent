@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import type { KnowledgeBase, Document, SearchParams, KnowledgeAPIConfig, Material, PromptTemplate } from '../api/knowledgeAPI';
+import type { CategoryNode } from '../types';
 import { mockKnowledgeAPI, MOCK_KNOWLEDGE_BASES, knowledgeAPI } from '../api/knowledgeAPI';
 
 interface KnowledgeState {
@@ -50,8 +51,17 @@ interface KnowledgeState {
     selectMaterial: (mat: Material | null) => void;
 
     // 模板操作
+    // 模板操作
     loadTemplates: (params: { query: string; categoryId?: string }) => Promise<void>;
     selectTemplate: (tpl: PromptTemplate | null) => void;
+
+    // UI 状态 (Missing in previous version)
+    categories: CategoryNode[];
+    viewMode: 'list' | 'grid';
+    fetchCategories: () => Promise<void>;
+    setViewMode: (mode: 'list' | 'grid') => void;
+    checkAPIConnection: () => Promise<boolean>;
+    fetchDocuments: (kbId: string) => Promise<void>;
 }
 
 export const useKnowledgeStore = create<KnowledgeState>((set, get) => ({
@@ -79,6 +89,10 @@ export const useKnowledgeStore = create<KnowledgeState>((set, get) => ({
 
     isConnected: false,
     lastError: null,
+
+    // UI State Initial Values
+    categories: [],
+    viewMode: 'list',
 
     // Actions
     loadKnowledgeBases: async () => {
@@ -118,11 +132,17 @@ export const useKnowledgeStore = create<KnowledgeState>((set, get) => ({
     searchDocuments: async (params) => {
         set({ isSearching: true, searchQuery: params.query, searchPage: 1 });
         try {
-            const response = await mockKnowledgeAPI.searchDocuments(params);
-            if (response.success && response.data) {
+            const response = await fetch('/api/v1/documents/search', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(params),
+            });
+
+            if (response.ok) {
+                const data = await response.json();
                 set({
-                    searchResults: response.data.documents,
-                    searchTotal: response.data.total,
+                    searchResults: data.documents,
+                    searchTotal: data.total,
                     isSearching: false,
                 });
             } else {
@@ -130,7 +150,7 @@ export const useKnowledgeStore = create<KnowledgeState>((set, get) => ({
                     searchResults: [],
                     searchTotal: 0,
                     isSearching: false,
-                    lastError: response.error,
+                    lastError: 'Search failed',
                 });
             }
         } catch (error) {
@@ -139,6 +159,36 @@ export const useKnowledgeStore = create<KnowledgeState>((set, get) => ({
                 isSearching: false,
                 lastError: error instanceof Error ? error.message : '搜索失败',
             });
+        }
+    },
+
+    fetchDocuments: async (kbId: string) => {
+        set({ isSearching: true });
+        try {
+            const response = await fetch('/api/v1/documents/search', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    query: '',
+                    knowledgeBaseIds: [kbId],
+                    page: 1,
+                    pageSize: 20
+                })
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                set({
+                    searchResults: data.documents || [],
+                    searchTotal: data.total || 0,
+                    isSearching: false
+                });
+            } else {
+                set({ searchResults: [], isSearching: false });
+            }
+        } catch (e) {
+            console.error(e);
+            set({ searchResults: [], isSearching: false });
         }
     },
 
@@ -269,4 +319,32 @@ export const useKnowledgeStore = create<KnowledgeState>((set, get) => ({
     selectTemplate: (tpl) => {
         set({ selectedTemplate: tpl });
     },
+
+    // New Actions Implementation
+    fetchCategories: async () => {
+        try {
+            const response = await fetch('/api/v1/categories');
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            const data = await response.json();
+            console.log("Real API Data received:", data);
+            set({ categories: data });
+        } catch (error) {
+            console.error('Failed to fetch categories:', error);
+            set({ categories: [] });
+        }
+    },
+
+    checkAPIConnection: async () => {
+        try {
+            const res = await fetch('/api/v1/categories');
+            return res.ok;
+        } catch (e) {
+            console.error("API Connection failed", e);
+            return false;
+        }
+    },
+
+    setViewMode: (mode) => set({ viewMode: mode }),
 }));

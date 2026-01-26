@@ -1,12 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Paperclip, Mic, StopCircle, ChevronDown, X, Users, Clock, Plus } from 'lucide-react';
+import { Send, Paperclip, Mic, StopCircle, ChevronDown, X, Users, Clock, Plus, Bot, Sparkles } from 'lucide-react';
 import { Button } from '../../components/common';
 import { useChatStore } from '../../stores';
 import { MessageList } from './MessageList';
 import { ChatHistory } from './components/ChatHistory';
 import { ConversationExportModal } from './components/ConversationExportModal';
 import type { Conversation } from '../../types';
-import './ChatInterface.css';
 
 // 专家数据类型
 interface Expert {
@@ -201,7 +200,7 @@ export const ChatInterface: React.FC = () => {
     );
 
     return (
-        <div className="chat-interface">
+        <div className="flex flex-col h-[calc(100vh-64px)] bg-white relative">
             {/* 对话历史面板 */}
             <ChatHistory
                 isOpen={showHistory}
@@ -222,27 +221,39 @@ export const ChatInterface: React.FC = () => {
                 }}
             />
 
-            <div className="chat-header">
-                <div className="chat-header-left">
+            {/* Header */}
+            <div className="h-16 flex items-center justify-between px-6 border-b border-gray-100 bg-white/80 backdrop-blur-md z-10 flex-shrink-0">
+                <div className="flex items-center gap-4">
                     <button
-                        className="history-trigger-btn"
+                        className="p-2 -ml-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
                         onClick={() => setShowHistory(true)}
                         title="对话历史"
                     >
                         <Clock size={20} />
                     </button>
-                    <div className="chat-title-area">
-                        <h2>{currentConversation?.title || 'BioMed Agent'}</h2>
-                        {currentConversation && (
-                            <span className="conversation-badge">对话中</span>
-                        )}
+
+                    <div>
+                        <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                            {currentConversation?.title || 'BioMed Agent'}
+                            {currentConversation && (
+                                <span className="px-2 py-0.5 bg-green-50 text-green-600 text-xs rounded-full font-medium">进行中</span>
+                            )}
+                        </h2>
+                        <div className="flex items-center gap-1 text-xs text-gray-500">
+                            <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
+                            System Online
+                        </div>
                     </div>
+
                     {selectedExpert && (
-                        <div className="active-expert-badge">
-                            <span className="expert-avatar-small">{selectedExpert.avatar}</span>
-                            <span>{selectedExpert.name}</span>
+                        <div className="flex items-center gap-2 pl-4 border-l border-gray-200 ml-2">
+                            <span className="text-xl animate-in zoom-in spin-in-12 duration-300">{selectedExpert.avatar}</span>
+                            <div className="flex flex-col">
+                                <span className="text-xs font-bold text-gray-800">{selectedExpert.name}</span>
+                                <span className="text-[10px] text-gray-500">{selectedExpert.domain}</span>
+                            </div>
                             <button
-                                className="remove-expert-btn"
+                                className="p-1 hover:bg-gray-100 rounded-full text-gray-400 hover:text-red-500 transition-colors ml-1"
                                 onClick={() => {
                                     setSelectedExpert(null);
                                     setCurrentExpert(null);
@@ -253,130 +264,146 @@ export const ChatInterface: React.FC = () => {
                         </div>
                     )}
                 </div>
-                <div className="chat-header-right">
-                    <div className="expert-selector" ref={selectorRef}>
+
+                <div className="flex items-center gap-3">
+                    {/* Expert Selector */}
+                    <div className="relative" ref={selectorRef}>
                         <button
-                            className="expert-selector-btn"
+                            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-sm transition-all ${showExpertSelector
+                                    ? 'bg-blue-50 border-blue-200 text-blue-700'
+                                    : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
+                                }`}
                             onClick={() => setShowExpertSelector(!showExpertSelector)}
                         >
-                            <Users size={18} />
+                            <Users size={16} />
                             <span>切换专家</span>
-                            <ChevronDown size={16} />
+                            <ChevronDown size={14} className={`transition-transform ${showExpertSelector ? 'rotate-180' : ''}`} />
                         </button>
 
                         {showExpertSelector && (
-                            <div className="expert-dropdown">
-                                <div className="dropdown-header">选择专家助手</div>
+                            <div className="absolute right-0 top-full mt-2 w-72 bg-white rounded-xl shadow-xl border border-gray-100 p-2 overflow-hidden animate-in fade-in zoom-in-95 duration-200 z-50">
+                                <div className="px-3 py-2 text-xs font-bold text-gray-400 uppercase tracking-wider">选择专家助手</div>
                                 <button
-                                    className={`expert-option ${!selectedExpert ? 'selected' : ''}`}
+                                    className={`w-full flex items-start gap-3 p-3 rounded-lg transition-colors text-left ${!selectedExpert ? 'bg-blue-50 text-blue-900 ring-1 ring-blue-100' : 'hover:bg-gray-50'}`}
                                     onClick={() => handleExpertSelect(null)}
                                 >
-                                    <span className="expert-option-avatar">🤖</span>
-                                    <div className="expert-option-info">
-                                        <span className="expert-option-name">通用助手</span>
-                                        <span className="expert-option-desc">综合分析与建议</span>
+                                    <span className="text-xl bg-gray-100 p-1.5 rounded-lg">🤖</span>
+                                    <div>
+                                        <div className="font-semibold text-sm">通用助手</div>
+                                        <div className="text-xs text-opacity-70 mt-0.5">综合分析与建议</div>
                                     </div>
                                 </button>
+                                <div className="h-px bg-gray-100 my-1 mx-2"></div>
                                 {AVAILABLE_EXPERTS.map(expert => (
                                     <button
                                         key={expert.id}
-                                        className={`expert-option ${selectedExpert?.id === expert.id ? 'selected' : ''}`}
+                                        className={`w-full flex items-start gap-3 p-3 rounded-lg transition-colors text-left ${selectedExpert?.id === expert.id ? 'bg-blue-50 text-blue-900 ring-1 ring-blue-100' : 'hover:bg-gray-50'}`}
                                         onClick={() => handleExpertSelect(expert)}
                                     >
-                                        <span className="expert-option-avatar">{expert.avatar}</span>
-                                        <div className="expert-option-info">
-                                            <span className="expert-option-name">{expert.name}</span>
-                                            <span className="expert-option-desc">{expert.domain}</span>
+                                        <span className="text-xl bg-gray-100 p-1.5 rounded-lg">{expert.avatar}</span>
+                                        <div>
+                                            <div className="font-semibold text-sm">{expert.name}</div>
+                                            <div className="text-xs text-opacity-70 mt-0.5">{expert.domain}</div>
                                         </div>
                                     </button>
                                 ))}
                             </div>
                         )}
                     </div>
-                    <button
-                        className="new-conversation-btn"
+
+                    <Button
                         onClick={handleNewConversation}
-                        title="新对话"
+                        leftIcon={<Plus size={16} />}
+                        size="sm"
                     >
-                        <Plus size={18} />
                         新对话
-                    </button>
-                    <span className="agent-status">
-                        <span className="status-dot active" />
-                        在线
-                    </span>
+                    </Button>
                 </div>
             </div>
 
-            <MessageList />
+            {/* Message Area */}
+            <div className="flex-1 overflow-hidden relative bg-gray-50/30 flex flex-col">
+                <MessageList />
+            </div>
 
-            <div className="chat-input-area">
-                {/* @提及建议列表 */}
+            {/* Input Area */}
+            <div className="p-4 bg-white border-t border-gray-100 relative">
+                {/* Mention List */}
                 {showMentionList && filteredExperts.length > 0 && (
-                    <div className="mention-list">
+                    <div className="absolute bottom-full left-4 mb-2 w-64 bg-white rounded-xl shadow-xl border border-gray-200 overflow-hidden animate-in slide-in-from-bottom-2">
                         {filteredExperts.map(expert => (
                             <button
                                 key={expert.id}
-                                className="mention-option"
+                                className="w-full flex items-center gap-3 p-3 hover:bg-blue-50 transition-colors text-left border-b border-gray-50 last:border-0"
                                 onClick={() => handleMentionSelect(expert)}
                             >
-                                <span className="mention-avatar">{expert.avatar}</span>
-                                <div className="mention-info">
-                                    <span className="mention-name">{expert.name}</span>
-                                    <span className="mention-domain">{expert.domain}</span>
+                                <span className="text-lg">{expert.avatar}</span>
+                                <div>
+                                    <div className="font-medium text-sm text-gray-900">{expert.name}</div>
+                                    <div className="text-xs text-gray-500">{expert.domain}</div>
                                 </div>
                             </button>
                         ))}
                     </div>
                 )}
 
-                <div className="input-container">
-                    <button className="input-action-btn" title="上传文件">
-                        <Paperclip size={20} />
-                    </button>
+                <div className="max-w-4xl mx-auto w-full">
+                    <div className="relative flex items-end gap-2 bg-gray-50 p-2 rounded-2xl border border-gray-200 focus-within:ring-2 focus-within:ring-blue-100 focus-within:border-blue-400 transition-all shadow-sm">
+                        <button className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="上传文件">
+                            <Paperclip size={20} />
+                        </button>
 
-                    <textarea
-                        ref={inputRef}
-                        className="chat-input"
-                        placeholder={selectedExpert
-                            ? `正在与 ${selectedExpert.name} 对话，输入 @ 可切换专家...`
-                            : '输入问题，或使用 @专家名 调用特定专家...'}
-                        value={inputValue}
-                        onChange={handleInputChange}
-                        onKeyDown={handleKeyDown}
-                        rows={1}
-                        disabled={isStreaming}
-                    />
+                        <textarea
+                            ref={inputRef}
+                            className="flex-1 bg-transparent border-0 focus:ring-0 p-2 text-gray-800 placeholder-gray-400 text-sm resize-none max-h-32 min-h-[40px] leading-relaxed"
+                            placeholder={selectedExpert
+                                ? `正在与 ${selectedExpert.name} 对话，输入 @ 可切换专家...`
+                                : '输入问题，或使用 @专家名 调用特定专家...'}
+                            value={inputValue}
+                            onChange={handleInputChange}
+                            onKeyDown={handleKeyDown}
+                            rows={1}
+                            disabled={isStreaming}
+                        />
 
-                    <button
-                        className={`input-action-btn ${isRecording ? 'recording' : ''}`}
-                        onClick={() => setIsRecording(!isRecording)}
-                        title={isRecording ? '停止录音' : '语音输入'}
-                    >
-                        {isRecording ? <StopCircle size={20} /> : <Mic size={20} />}
-                    </button>
-
-                    <Button
-                        variant="primary"
-                        size="sm"
-                        onClick={handleSend}
-                        disabled={!inputValue.trim() || isStreaming}
-                        isLoading={isStreaming}
-                    >
-                        <Send size={18} />
-                    </Button>
+                        <div className="flex items-center gap-1 pb-1">
+                            <button
+                                className={`p-2 rounded-lg transition-colors ${isRecording ? 'text-red-500 bg-red-50 animate-pulse' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-200'}`}
+                                onClick={() => setIsRecording(!isRecording)}
+                                title={isRecording ? '停止录音' : '语音输入'}
+                            >
+                                {isRecording ? <StopCircle size={20} /> : <Mic size={20} />}
+                            </button>
+                            <Button
+                                size="sm"
+                                onClick={handleSend}
+                                disabled={!inputValue.trim() || isStreaming}
+                                isLoading={isStreaming}
+                                className="rounded-xl px-4"
+                            >
+                                <Send size={18} />
+                            </Button>
+                        </div>
+                    </div>
+                    <div className="flex justify-between items-center mt-2 px-2">
+                        <p className="text-xs text-gray-400">
+                            按 Enter 发送，Shift + Enter 换行
+                        </p>
+                        <div className="flex items-center gap-4 text-xs text-gray-400">
+                            <span className="flex items-center gap-1">
+                                <Bot size={12} />
+                                AI 生成内容仅供参考
+                            </span>
+                        </div>
+                    </div>
                 </div>
-
-                <p className="input-hint">
-                    按 Enter 发送，Shift + Enter 换行 | 输入 <code>@</code> 可调用专家
-                </p>
             </div>
         </div>
     );
 };
 
 // 根据专家生成模拟响应
-function generateMockResponse(query: string, expert: Expert | null): string {
+function generateMockResponse(_query: string, expert: Expert | null): string {
     if (!expert) {
         return `我已收到您的问题，正在为您综合分析。
 
@@ -545,4 +572,3 @@ function generateCitations(expert: Expert) {
             return [];
     }
 }
-

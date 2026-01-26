@@ -1,0 +1,241 @@
+/* =============================================
+   ADMETHeatmap - ADMET 热力图样式
+   ============================================= */
+
+.admet-heatmap {
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+}
+
+.admet-heatmap--loading,
+.admet-heatmap--empty {
+    min-height: 300px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-6);
+}
+
+.admet-heatmap__empty-icon {
+    font-size: 3rem;
+    margin-bottom: var(--space-3);
+    opacity: 0.5;
+}
+
+.admet-heatmap--empty p {
+    color: var(--text-muted);
+    font-size: var(--text-sm);
+    margin: 0;
+}
+
+/* 骨架屏 */
+.admet-heatmap__skeleton {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+.admet-heatmap__skeleton-row {
+    height: 60px;
+    background: linear-gradient(90deg, var(--bg-secondary) 25%, var(--bg-tertiary) 50%, var(--bg-secondary) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: var(--radius-md);
+}
+
+/* 头部 */
+.admet-heatmap__header {
+    padding: var(--space-4);
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.admet-heatmap__title h4 {
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 var(--space-3);
+}
+
+.admet-heatmap__summary {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.admet-heatmap__overall-score {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: var(--space-2) var(--space-4);
+    border-radius: var(--radius-lg);
+    min-width: 80px;
+}
+
+.admet-heatmap__score-label {
+    font-size: 10px;
+    font-weight: 500;
+    opacity: 0.8;
+}
+
+.admet-heatmap__score-value {
+    font-size: var(--text-base);
+    font-weight: 700;
+}
+
+.admet-heatmap__score-bar {
+    flex: 1;
+    height: 8px;
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+}
+
+.admet-heatmap__score-fill {
+    height: 100%;
+    border-radius: var(--radius-full);
+    transition: width 0.5s ease;
+}
+
+.admet-heatmap__score-percent {
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--text-secondary);
+    min-width: 40px;
+    text-align: right;
+}
+
+/* 分类列表 */
+.admet-heatmap__categories {
+    padding: var(--space-4);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+}
+
+.admet-heatmap__category {
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+}
+
+.admet-heatmap__category-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-3);
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.admet-heatmap__category-icon {
+    font-size: var(--text-base);
+}
+
+.admet-heatmap__category-label {
+    flex: 1;
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.admet-heatmap__category-status {
+    display: flex;
+    align-items: center;
+}
+
+/* 属性列表 */
+.admet-heatmap__properties {
+    display: flex;
+    flex-direction: column;
+}
+
+.admet-heatmap__property {
+    padding: var(--space-3);
+    border-left: 3px solid;
+    border-bottom: 1px solid var(--border-color);
+    background: var(--bg-primary);
+}
+
+.admet-heatmap__property:last-child {
+    border-bottom: none;
+}
+
+.admet-heatmap__property-main {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-1);
+}
+
+.admet-heatmap__property-name {
+    font-size: var(--text-sm);
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.admet-heatmap__property-risk {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+    font-size: var(--text-xs);
+    font-weight: 500;
+    padding: 2px 8px;
+    border-radius: var(--radius-full);
+}
+
+.admet-heatmap__property-value {
+    font-size: var(--text-sm);
+    color: var(--text-secondary);
+}
+
+.admet-heatmap__property-value small {
+    color: var(--text-muted);
+}
+
+.admet-heatmap__property-desc {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-1);
+    margin-top: var(--space-2);
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+    line-height: 1.4;
+}
+
+/* 图例 */
+.admet-heatmap__legend {
+    display: flex;
+    justify-content: center;
+    gap: var(--space-4);
+    padding: var(--space-3);
+    background: var(--bg-secondary);
+    border-top: 1px solid var(--border-color);
+}
+
+.admet-heatmap__legend-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+}
+
+.admet-heatmap__legend-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+}
+
+/* 深色模式 */
+[data-theme="dark"] .admet-heatmap {
+    background: var(--bg-dark-secondary);
+}
+
+[data-theme="dark"] .admet-heatmap__property {
+    background: var(--bg-dark-primary);
+}

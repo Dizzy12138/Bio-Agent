@@ -62,8 +62,6 @@ export const APIConfigModal: React.FC<APIConfigModalProps> = ({
         onClose();
     };
 
-    if (!isOpen) return null;
-
     const modalContent = (
         <div className="api-config-overlay" onClick={onClose}>
             <div className="api-config-modal" onClick={e => e.stopPropagation()}>
@@ -173,5 +171,5 @@ export const APIConfigModal: React.FC<APIConfigModalProps> = ({
         </div>
     );
 
-    return createPortal(modalContent, document.body);
+    return isOpen ? createPortal(modalContent, document.body) : null;
 };

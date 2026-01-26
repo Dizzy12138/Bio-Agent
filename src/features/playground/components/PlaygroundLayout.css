@@ -1,0 +1,302 @@
+/**
+ * PlaygroundLayout Styles - Unified with Design System
+ * Uses CSS variables from src/styles/index.css
+ */
+
+.playground-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+}
+
+/* ============ Header ============ */
+.playground-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-3) var(--space-4);
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+}
+
+.playground-header h1 {
+    font-size: var(--text-lg);
+    font-weight: 600;
+    margin: 0;
+    color: var(--text-primary);
+}
+
+.header-stats {
+    display: flex;
+    gap: var(--space-3);
+}
+
+.stat {
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+    padding: var(--space-1) var(--space-2);
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-sm);
+}
+
+.stat.highlight {
+    background: var(--warning-500);
+    color: white;
+}
+
+.header-actions {
+    display: flex;
+    gap: var(--space-2);
+}
+
+/* Buttons - Match Design System */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    padding: var(--space-2) var(--space-3);
+    font-size: var(--text-sm);
+    font-weight: 500;
+    border: none;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.btn-primary {
+    background: var(--primary-500);
+    color: white;
+}
+
+.btn-primary:hover {
+    background: var(--primary-600);
+}
+
+.btn-secondary {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+}
+
+.btn-secondary:hover {
+    background: var(--bg-dark-tertiary);
+}
+
+.btn-ghost {
+    background: transparent;
+    color: var(--text-secondary);
+    padding: var(--space-2);
+}
+
+.btn-ghost:hover {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+}
+
+/* ============ Main Layout ============ */
+.playground-main {
+    flex: 1;
+    display: flex;
+    gap: var(--space-3);
+    padding: var(--space-3);
+    overflow: hidden;
+}
+
+.panel {
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-secondary);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-color);
+    overflow: hidden;
+}
+
+.panel-left {
+    flex: none;
+    min-width: 300px;
+}
+
+.panel-right {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+/* Vertical Resize Handle (between left & right panels) */
+.resize-handle-vertical {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    flex-shrink: 0;
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-sm);
+    cursor: col-resize;
+    color: var(--text-muted);
+    transition: all var(--transition-fast);
+}
+
+.resize-handle-vertical:hover {
+    background: var(--primary-500);
+    color: white;
+}
+
+.resize-handle-vertical:active {
+    background: var(--primary-600);
+}
+
+/* ============ Document Tabs ============ */
+.document-tabs {
+    display: flex;
+    gap: var(--space-1);
+    padding: var(--space-2);
+    background: var(--bg-tertiary);
+    border-bottom: 1px solid var(--border-color);
+    overflow-x: auto;
+}
+
+.doc-tab {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+    padding: var(--space-1) var(--space-2);
+    font-size: var(--text-xs);
+    color: var(--text-secondary);
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all var(--transition-fast);
+}
+
+.doc-tab:hover {
+    background: var(--bg-primary);
+    color: var(--text-primary);
+}
+
+.doc-tab.active {
+    background: var(--primary-500);
+    color: white;
+    border-color: var(--primary-500);
+}
+
+.tab-name {
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.tab-close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 14px;
+    height: 14px;
+    padding: 0;
+    background: transparent;
+    border: none;
+    border-radius: var(--radius-sm);
+    color: inherit;
+    opacity: 0.6;
+    cursor: pointer;
+}
+
+.tab-close:hover {
+    opacity: 1;
+    background: rgba(0, 0, 0, 0.2);
+}
+
+/* ============ Panel Wrappers ============ */
+.viewer-wrapper {
+    flex: 1;
+    overflow: hidden;
+}
+
+.grid-wrapper {
+    flex: none;
+    overflow: hidden;
+}
+
+.resize-handle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 20px;
+    margin: 0 var(--space-2);
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-sm);
+    cursor: row-resize;
+    color: var(--text-muted);
+    transition: all var(--transition-fast);
+}
+
+.resize-handle:hover {
+    background: var(--primary-500);
+    color: white;
+}
+
+.resize-handle:active {
+    background: var(--primary-600);
+}
+
+.chat-wrapper {
+    flex: 1;
+    min-height: 200px;
+    overflow: hidden;
+}
+
+/* ============ Collapsible Section ============ */
+.section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-2) var(--space-3);
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    font-size: var(--text-sm);
+    font-weight: 500;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.section-header:hover {
+    background: var(--bg-secondary);
+}
+
+.batch-wrapper {
+    margin-top: calc(-1 * var(--space-2));
+}
+
+.batch-wrapper .batch-uploader {
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+}
+
+/* ============ Responsive ============ */
+@media (max-width: 1024px) {
+    .playground-main {
+        flex-direction: column;
+    }
+
+    .panel-left {
+        flex: 0 0 auto;
+        max-height: 50vh;
+    }
+
+    .panel-right {
+        flex: 1;
+    }
+}

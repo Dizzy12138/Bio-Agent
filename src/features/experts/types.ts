@@ -1,5 +1,17 @@
 // Expert Agent 类型定义
 
+// Agent 类型：区分普通专家和系统 Agent
+export type AgentType = 'expert' | 'system-agent';
+
+// 系统 Agent 专用配置
+export interface SystemAgentConfig {
+    maxIterations?: number;      // ReAct 最大循环次数
+    temperature?: number;        // LLM 温度
+    enableTools?: boolean;       // 是否启用工具（如 SQL 执行器）
+    toolIds?: string[];          // 关联的工具 ID
+    modelOverride?: string;      // 覆盖默认模型
+}
+
 export interface Expert {
     id: string;
     name: string;
@@ -16,6 +28,9 @@ export interface Expert {
     usageCount: number;
     isSystem: boolean; // 是否为系统内置专家
     status: 'active' | 'draft' | 'archived';
+    // 新增 Agent 扩展字段
+    agentType?: AgentType;
+    agentConfig?: SystemAgentConfig;
 }
 
 export interface ExpertCreationStep {
@@ -54,6 +69,7 @@ export interface ExpertFilter {
     domain: string | null;
     status: Expert['status'] | null;
     isSystem: boolean | null;
+    agentType?: AgentType | null; // 新增：按 Agent 类型过滤
 }
 
 // 预设领域
@@ -64,6 +80,7 @@ export const EXPERT_DOMAINS = [
     { id: 'diagnostics', name: '诊断辅助', icon: '🔬' },
     { id: 'treatment', name: '治疗方案', icon: '💊' },
     { id: 'research', name: '科研助手', icon: '🎓' },
+    { id: 'extraction', name: '信息提取', icon: '📋' }, // 新增
     { id: 'custom', name: '自定义', icon: '✨' },
 ] as const;
 
@@ -72,4 +89,5 @@ export const EXPERT_CAPABILITIES = [
     '文献检索', '数据分析', '图表生成', '报告撰写',
     '病例分析', '材料推荐', '治疗建议', '知识问答',
     '实验设计', '论文辅助', '翻译', '总结',
+    'SQL查询', 'ReAct推理', 'Schema设计', // 新增
 ] as const;

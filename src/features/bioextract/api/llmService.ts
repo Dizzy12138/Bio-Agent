@@ -33,7 +33,7 @@ export interface LLMResponse {
 // 配置常量
 // =============================================
 const LLM_DEFAULT_TEMPERATURE = 0.7;
-const LLM_DEFAULT_MAX_TOKENS = 4096;
+const LLM_DEFAULT_MAX_TOKENS = 16384;
 const LLM_CONFIG_STORAGE_KEY = 'bioextract_llm_config';
 
 // 默认配置
