@@ -1,5 +1,5 @@
 import React from 'react';
-import { Zap, Search, MessageSquare, Plus, Users, LayoutTemplate } from 'lucide-react';
+import { Zap, Search, MessageSquare, Users } from 'lucide-react';
 import type { Expert } from '../types';
 
 interface ExpertListProps {
@@ -130,8 +130,8 @@ interface ExpertCardProps {
 const ExpertCard: React.FC<ExpertCardProps> = ({ expert, isSelected, onClick }) => (
     <div
         className={`relative group p-3 rounded-xl transition-all cursor-pointer border ${isSelected
-                ? 'bg-blue-50 border-blue-200 shadow-sm'
-                : 'bg-white border-transparent hover:bg-gray-50 border-gray-100'
+            ? 'bg-blue-50 border-blue-200 shadow-sm'
+            : 'bg-white border-transparent hover:bg-gray-50 border-gray-100'
             }`}
         onClick={onClick}
     >
@@ -153,16 +153,16 @@ const ExpertCard: React.FC<ExpertCardProps> = ({ expert, isSelected, onClick }) 
                 <div className="flex flex-wrap gap-1 mt-2">
                     {expert.capabilities.slice(0, 2).map(cap => (
                         <span key={cap} className={`text-[10px] px-1.5 py-0.5 rounded-full border ${isSelected
-                                ? 'bg-white border-blue-100 text-blue-600'
-                                : 'bg-gray-50 border-gray-100 text-gray-500'
+                            ? 'bg-white border-blue-100 text-blue-600'
+                            : 'bg-gray-50 border-gray-100 text-gray-500'
                             }`}>
                             {cap}
                         </span>
                     ))}
                     {expert.capabilities.length > 2 && (
                         <span className={`text-[10px] px-1.5 py-0.5 rounded-full border ${isSelected
-                                ? 'bg-white border-blue-100 text-blue-600'
-                                : 'bg-gray-50 border-gray-100 text-gray-500'
+                            ? 'bg-white border-blue-100 text-blue-600'
+                            : 'bg-gray-50 border-gray-100 text-gray-500'
                             }`}>
                             +{expert.capabilities.length - 2}
                         </span>

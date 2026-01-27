@@ -25,7 +25,8 @@ export const Select: React.FC<SelectProps> = ({
     onChange,
     ...props
 }) => {
-    const selectId = id || `select-${Math.random().toString(36).slice(2, 9)}`;
+    const generatedId = React.useId();
+    const selectId = id || generatedId;
 
     const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         onChange?.(e.target.value);

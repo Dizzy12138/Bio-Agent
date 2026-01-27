@@ -13,7 +13,7 @@ import { DataGrid } from './DataGrid';
 import { PlaygroundChat } from './PlaygroundChat';
 import { BatchUploader } from './BatchUploader';
 import { Button } from '../../../components/common';
-import { Upload, RotateCcw, FileImage, X, ChevronDown, ChevronUp, GripHorizontal, GripVertical } from 'lucide-react';
+import { Upload, RotateCcw, FileImage, X, ChevronDown, ChevronUp } from 'lucide-react';
 import './PlaygroundLayout.css';
 
 // Reusable resize hook

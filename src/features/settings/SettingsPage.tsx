@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Button, useToast, Modal, Input } from '../../components/common';
+import { Button, useToast, Modal } from '../../components/common';
 import { Plus, Trash2, Bot, Zap, Palette, Server, Shield, Settings } from 'lucide-react';
 import { AgentConfigPanel } from '../experts';
 import { MCPConfigPanel } from '../mcp';
@@ -27,7 +27,7 @@ export const SettingsPage: React.FC = () => {
 
     // Load active tab from localStorage or default to 'agents'
     const [activeTab, setActiveTab] = useState<'agents' | 'mcp' | 'models' | 'theme'>(() => {
-        return (localStorage.getItem('settings_active_tab') as any) || 'agents';
+        return (localStorage.getItem('settings_active_tab') as 'agents' | 'mcp' | 'models' | 'theme') || 'agents';
     });
 
     // Save active tab to localStorage whenever it changes
@@ -80,6 +80,7 @@ export const SettingsPage: React.FC = () => {
             const timer = setTimeout(loadModels, 500);
             return () => clearTimeout(timer);
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- loadModels 依赖于 config，不需要作为依赖
     }, [config.apiKey, config.provider, config.baseUrl, showAddModal]);
 
     const loadModels = async () => {
@@ -155,7 +156,7 @@ export const SettingsPage: React.FC = () => {
             } else {
                 error('添加失败');
             }
-        } catch (e) {
+        } catch {
             error('网络错误');
         }
     };
@@ -167,8 +168,8 @@ export const SettingsPage: React.FC = () => {
             await fetch(`/api/v1/config/providers/${id}`, { method: 'DELETE' });
             fetchProviders();
             success('删除成功');
-        } catch (e) {
-            console.error(e);
+        } catch (err) {
+            console.error(err);
             error('删除失败');
         }
     };
@@ -359,7 +360,7 @@ export const SettingsPage: React.FC = () => {
                             {LLM_PROVIDERS.map(p => (
                                 <button
                                     key={p.id}
-                                    onClick={() => setConfig(prev => ({ ...prev, provider: p.id as any, baseUrl: p.defaultBaseUrl }))}
+                                    onClick={() => setConfig(prev => ({ ...prev, provider: p.id as LLMConfig['provider'], baseUrl: p.defaultBaseUrl }))}
                                     className={`px-4 py-3 rounded-lg border text-sm font-medium transition-all
                                         ${config.provider === p.id
                                             ? 'border-blue-500 bg-blue-50 text-blue-700 ring-2 ring-blue-500 ring-offset-1'

@@ -72,7 +72,8 @@ export const StructureEditor: React.FC<StructureEditorProps> = ({
         }
 
         // 简单的 SMILES 格式验证
-        const validChars = /^[A-Za-z0-9@\[\]\(\)\=\#\-\+\.\\/\%]+$/;
+        // SMILES 字符集: 字母、数字、@、[]、()、=、#、-、+、.、\、/、%
+        const validChars = /^[A-Za-z0-9@[\]()=#\-+.\\//%]+$/;
         if (!validChars.test(value.replace(/\s/g, ''))) {
             setError('SMILES 格式无效，请检查输入');
             return;

@@ -1,11 +1,11 @@
 // ExpertEditModal.tsx - Refactored for Design System V2
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Modal, Button, Input, TextArea } from '../../../components/common';
 import type { Expert } from '../types';
 import { EXPERT_DOMAINS, EXPERT_CAPABILITIES } from '../types';
 import {
     Info, Star, Wrench, Database, MessageSquare,
-    User, Stethoscope, Microscope, FileText, FlaskConical,
+    Stethoscope, Microscope, FileText, FlaskConical,
     Check, Sparkles, AlertCircle
 } from 'lucide-react';
 
@@ -52,7 +52,10 @@ export const ExpertEditModal: React.FC<ExpertEditModalProps> = ({
     const [activeTab, setActiveTab] = useState<typeof TABS[number]['id']>('basic');
     const [isSaving, setIsSaving] = useState(false);
 
+    // 当 modal 打开时同步表单数据
+    // 使用 eslint-disable 因为这是一个合理的模式：在 modal 打开时重置表单
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- 在 modal 打开时需要同步外部 prop 到内部 state
         if (isOpen) setFormData(expert);
     }, [expert, isOpen]);
 

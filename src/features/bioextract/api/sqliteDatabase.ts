@@ -484,7 +484,7 @@ class SQLiteDatabaseService {
                     try {
                         this.db!.run(insertSQL, processedValues);
                         insertedCount++;
-                    } catch (e) {
+                    } catch {
                         // 静默处理插入错误
                     }
                 }
@@ -533,7 +533,7 @@ class SQLiteDatabaseService {
                     try {
                         this.db!.run(insertSQL, processedValues);
                         insertedCount++;
-                    } catch (e) {
+                    } catch {
                         // 静默处理插入错误
                     }
                 }
@@ -576,7 +576,7 @@ class SQLiteDatabaseService {
                     try {
                         this.db!.run(insertSQL, processedValues);
                         insertedCount++;
-                    } catch (e) {
+                    } catch {
                         // 静默处理插入错误
                     }
                 }

@@ -46,7 +46,7 @@ export const APIConfigModal: React.FC<APIConfigModalProps> = ({
                 setTestStatus('error');
                 setTestMessage(`连接失败: HTTP ${response.status}`);
             }
-        } catch (error) {
+        } catch {
             setTestStatus('error');
             setTestMessage('无法连接到服务器');
         } finally {

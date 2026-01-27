@@ -206,14 +206,16 @@ export async function executeTool(toolId: string, params: MCPToolParams): Promis
         let result: MCPToolResult;
 
         switch (toolId) {
-            case 'mcp-ocr':
+            case 'mcp-ocr': {
                 const { executeOCRTool } = await import('./tools/ocrTool');
                 result = await executeOCRTool(params, tool.config);
                 break;
-            case 'mcp-sql':
+            }
+            case 'mcp-sql': {
                 const { executeSQLTool } = await import('./tools/sqlTool');
                 result = await executeSQLTool(params, tool.config);
                 break;
+            }
             case 'mcp-knowledge':
                 // Placeholder
                 result = { success: false, output: null, error: 'Knowledge tool not yet implemented' };

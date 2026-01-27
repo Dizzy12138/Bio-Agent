@@ -44,31 +44,37 @@ export const ExpertCreation: React.FC<ExpertCreationProps> = ({ onComplete, onCa
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const hasInitialized = useRef(false);
 
+
+
+    // 添加助手消息（使用 useCallback 确保在 useEffect 前定义）
+    const addAssistantMessage = React.useCallback((content: string) => {
+        setIsTyping(true);
+        setTimeout(() => {
+            setMessages(prev => [...prev, {
+                id: `msg-${Date.now()}`,
+                role: 'assistant',
+                content: content
+                    .replace('{name}', state.name || '专家')
+                    .replace('{domain}', state.domain || '领域'),
+                timestamp: new Date().toISOString(),
+            }]);
+            setIsTyping(false);
+        }, 500);
+    }, [state.name, state.domain]);
+
     // 初始化消息 - 使用 ref 防止 StrictMode 下重复执行
     useEffect(() => {
         if (!hasInitialized.current) {
             hasInitialized.current = true;
             addAssistantMessage(CREATION_STEPS[0].question);
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- 只在初始化时执行一次
     }, []);
 
     // 滚动到底部
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages]);
-
-    const addAssistantMessage = (content: string) => {
-        setIsTyping(true);
-        setTimeout(() => {
-            setMessages(prev => [...prev, {
-                id: `msg-${Date.now()}`,
-                role: 'assistant',
-                content: formatMessage(content),
-                timestamp: new Date().toISOString(),
-            }]);
-            setIsTyping(false);
-        }, 500);
-    };
 
     const addUserMessage = (content: string) => {
         setMessages(prev => [...prev, {
@@ -79,11 +85,6 @@ export const ExpertCreation: React.FC<ExpertCreationProps> = ({ onComplete, onCa
         }]);
     };
 
-    const formatMessage = (template: string) => {
-        return template
-            .replace('{name}', state.name || '专家')
-            .replace('{domain}', state.domain || '领域');
-    };
 
     const handleSend = () => {
         if (!inputValue.trim() && state.step !== 2) return;

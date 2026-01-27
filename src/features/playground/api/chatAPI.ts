@@ -1,4 +1,4 @@
-import { Message } from '../../../types';
+// Chat API for streaming LLM responses
 
 export interface ChatCompletionRequest {
     message: string;
@@ -71,7 +71,7 @@ export const chatAPI = {
                             if (parsed.error) {
                                 if (onError) onError(new Error(parsed.error));
                             }
-                        } catch (e) {
+                        } catch {
                             console.warn('Failed to parse SSE data:', data);
                         }
                     }

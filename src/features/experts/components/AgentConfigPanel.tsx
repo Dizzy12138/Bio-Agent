@@ -36,6 +36,7 @@ export const AgentConfigPanel: React.FC<AgentConfigPanelProps> = ({
         if (agentId) {
             const agent = SYSTEM_AGENTS.find(a => a.id === agentId);
             if (agent) {
+                // eslint-disable-next-line react-hooks/set-state-in-effect -- 需要根据外部 prop 同步内部状态
                 setSelectedAgent(agent);
                 setEditedPrompt(getAgentPrompt(agentId));
             }

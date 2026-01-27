@@ -7,6 +7,9 @@ interface AbundanceChartProps {
     loading?: boolean;
 }
 
+// 预定义的骨架屏高度值，避免在渲染时使用 Math.random()
+const SKELETON_HEIGHTS = ['45%', '72%', '38%', '65%', '55%'];
+
 /**
  * AbundanceChart - 丰度柱状图
  * 
@@ -21,8 +24,8 @@ export const AbundanceChart: React.FC<AbundanceChartProps> = ({
         return (
             <div className="abundance-chart abundance-chart--loading">
                 <div className="abundance-chart__skeleton">
-                    {[1, 2, 3, 4, 5].map(i => (
-                        <div key={i} className="abundance-chart__skeleton-bar" style={{ height: `${20 + Math.random() * 60}%` }} />
+                    {SKELETON_HEIGHTS.map((height, i) => (
+                        <div key={i} className="abundance-chart__skeleton-bar" style={{ height }} />
                     ))}
                 </div>
             </div>

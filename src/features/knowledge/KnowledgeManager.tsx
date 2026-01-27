@@ -52,7 +52,7 @@ export const KnowledgeManager: React.FC = () => {
         apiConfig,
         setAPIConfig,
         checkAPIConnection,
-        isConnected
+        // isConnected 在库中定义但未在此组件中使用
     } = useKnowledgeStore();
 
     // 状态管理
@@ -77,6 +77,7 @@ export const KnowledgeManager: React.FC = () => {
         }
         fetchCategories();
         checkAPIConnection();
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- fetchDocuments 依赖于 selectedCategory，已在数组中
     }, [activeView, selectedCategory, fetchCategories, checkAPIConnection]);
 
     const handleSync = async () => {
@@ -289,8 +290,8 @@ export const KnowledgeManager: React.FC = () => {
                             <div className="flex items-center gap-2">
                                 <span className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-xs font-medium border border-blue-100 animate-in fade-in zoom-in duration-200">
                                     分类: {categories
-                                        .flatMap((c: any) => c.children || [])
-                                        .find((c: any) => c.id === selectedCategory)?.name || selectedCategory}
+                                        .flatMap((c: { children?: Array<{ id: string; name: string }> }) => c.children || [])
+                                        .find((c: { id: string; name: string }) => c.id === selectedCategory)?.name || selectedCategory}
                                     <button
                                         onClick={() => setSelectedCategory(null)}
                                         className="hover:bg-blue-200 rounded-full p-0.5 ml-1 transition-colors"

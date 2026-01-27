@@ -21,7 +21,7 @@ import type { ThinkingStep } from '../../bioextract/agent/BioExtractAgent';
 export interface DocumentFile {
     id: string;
     name: string;
-    type: 'image' | 'pdf';
+    type: 'image' | 'pdf' | 'text';
     /** Data URL or object URL for display */
     url: string;
     /** Original file reference for re-processing */

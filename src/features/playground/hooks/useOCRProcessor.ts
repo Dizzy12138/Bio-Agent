@@ -54,29 +54,50 @@ export function useOCRProcessor() {
             });
 
             try {
-                // Simulate progress updates
-                updateOCRQueueItem(item.id, { progress: 30 });
+                // Check if it's a TXT file - read directly without OCR
+                if (item.file.type === 'text/plain') {
+                    updateOCRQueueItem(item.id, { progress: 50 });
 
-                const result = await processDocument(item.file, config);
+                    const text = await item.file.text();
 
-                updateOCRQueueItem(item.id, { progress: 80 });
-
-                if (result.status === 'completed' && result.extractedText) {
                     updateOCRQueueItem(item.id, {
                         status: 'completed',
                         progress: 100,
-                        extractedText: result.extractedText,
+                        extractedText: text,
                     });
 
                     processedDocs.push({
                         id: item.id,
                         fileName: item.fileName,
-                        text: result.extractedText,
+                        text: text,
                     });
 
                     completed++;
                 } else {
-                    throw new Error(result.error || 'Processing failed');
+                    // Process with OCR for PDF/images
+                    updateOCRQueueItem(item.id, { progress: 30 });
+
+                    const result = await processDocument(item.file, config);
+
+                    updateOCRQueueItem(item.id, { progress: 80 });
+
+                    if (result.status === 'completed' && result.extractedText) {
+                        updateOCRQueueItem(item.id, {
+                            status: 'completed',
+                            progress: 100,
+                            extractedText: result.extractedText,
+                        });
+
+                        processedDocs.push({
+                            id: item.id,
+                            fileName: item.fileName,
+                            text: result.extractedText,
+                        });
+
+                        completed++;
+                    } else {
+                        throw new Error(result.error || 'Processing failed');
+                    }
                 }
             } catch (error) {
                 updateOCRQueueItem(item.id, {
@@ -102,14 +123,25 @@ export function useOCRProcessor() {
             // Create DocumentFile entries for successfully processed files
             const docFiles = ocrQueue
                 .filter(item => processedDocs.some(p => p.id === item.id))
-                .map(item => ({
-                    id: item.id,
-                    name: item.fileName,
-                    type: item.file.type === 'application/pdf' ? 'pdf' as const : 'image' as const,
-                    url: URL.createObjectURL(item.file),
-                    file: item.file,
-                    extractedText: processedDocs.find(p => p.id === item.id)?.text,
-                }));
+                .map(item => {
+                    let docType: 'pdf' | 'image' | 'text';
+                    if (item.file.type === 'application/pdf') {
+                        docType = 'pdf';
+                    } else if (item.file.type === 'text/plain') {
+                        docType = 'text';
+                    } else {
+                        docType = 'image';
+                    }
+
+                    return {
+                        id: item.id,
+                        name: item.fileName,
+                        type: docType,
+                        url: docType === 'text' ? '' : URL.createObjectURL(item.file),
+                        file: item.file,
+                        extractedText: processedDocs.find(p => p.id === item.id)?.text,
+                    };
+                });
 
             addDocuments(docFiles);
         }

@@ -115,7 +115,7 @@ export const BatchUploader: React.FC = () => {
                 />
                 <Upload size={32} />
                 <p>拖拽文件到此处，或点击选择</p>
-                <span className="supported-types">支持 PDF、PNG、JPG、TIFF</span>
+                <span className="supported-types">支持 PDF、PNG、JPG、TIFF、TXT</span>
             </div>
 
             {/* Queue List */}

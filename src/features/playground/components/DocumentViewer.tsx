@@ -103,6 +103,7 @@ export const DocumentViewer: React.FC = () => {
         return () => {
             cancelled = true;
         };
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- 使用解构属性避免对象引用变化
     }, [activeDoc?.id, activeDoc?.type, activeDoc?.url, activeDoc?.file]);
 
     // Cleanup PDF doc on unmount
@@ -279,6 +280,24 @@ export const DocumentViewer: React.FC = () => {
                                 }}
                             />
                         )}
+                    </div>
+                )}
+
+                {activeDoc.type === 'text' && activeDoc.extractedText && (
+                    <div className="text-container">
+                        <div className="text-content">
+                            <pre style={{
+                                whiteSpace: 'pre-wrap',
+                                wordWrap: 'break-word',
+                                fontFamily: 'monospace',
+                                fontSize: '14px',
+                                lineHeight: '1.6',
+                                padding: '20px',
+                                margin: 0,
+                            }}>
+                                {activeDoc.extractedText}
+                            </pre>
+                        </div>
                     </div>
                 )}
 

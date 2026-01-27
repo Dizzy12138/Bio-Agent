@@ -7,7 +7,7 @@
  * - Configure tool settings
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
     getAllTools,
     updateToolConfig,
@@ -19,15 +19,11 @@ import { Power, RotateCcw, Check, Zap, Settings } from 'lucide-react';
 import './MCPConfigPanel.css';
 
 export const MCPConfigPanel: React.FC = () => {
-    const [tools, setTools] = useState<MCPTool[]>([]);
+    // 使用 useState 初始化函数直接加载工具，避免 useEffect 中的 setState
+    const [tools, setTools] = useState<MCPTool[]>(() => getAllTools());
     const [selectedToolId, setSelectedToolId] = useState<string | null>(null);
     const [editingConfig, setEditingConfig] = useState<Record<string, unknown>>({});
     const [hasChanges, setHasChanges] = useState(false);
-
-    // Load tools on mount
-    useEffect(() => {
-        setTools(getAllTools());
-    }, []);
 
     const selectedTool = tools.find(t => t.id === selectedToolId);
 

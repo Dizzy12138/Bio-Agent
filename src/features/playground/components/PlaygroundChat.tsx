@@ -1,12 +1,9 @@
 /**
  * PlaygroundChat Component (Enhanced with Agent Integration)
- * 
- * Key Features:
- * 1. Connects to BioExtractAgent for real LLM interaction
- * 2. Supports Schema Induction from natural language
- * 3. Triggers document extraction
- * 4. Shows thinking steps in real-time
- * 5. Uses configurable prompts from Agent Management
+ * * Fixes Applied:
+ * 1. Added 'min-h-0' to message list to prevent flex overflow (The invisible input bug).
+ * 2. Added 'flex-none' and 'z-10' to input area to ensure visibility.
+ * 3. Removed external CSS dependency.
  */
 
 import React, { useState, useRef, useEffect } from 'react';
@@ -15,7 +12,6 @@ import { getLLMConfig, callLLM, type ChatMessage } from '../../bioextract/api/ll
 import { ThinkingProcess } from '../../bioextract/components/ThinkingProcess';
 import { getAgentPrompt, PLAYGROUND_SCHEMA_PROMPT } from '../../experts/templates';
 import { Send, Sparkles, Loader2 } from 'lucide-react';
-import './PlaygroundChat.css';
 
 // 获取当前配置的系统提示词（支持 localStorage 覆盖）
 function getPlaygroundPrompt(): string {
@@ -217,8 +213,8 @@ export const PlaygroundChat: React.FC = () => {
 
         // Auto-submit after setting input
         setTimeout(() => {
-            const form = document.querySelector('.chat-input-area') as HTMLFormElement;
-            form?.requestSubmit();
+            const form = document.querySelector('button[type="submit"]') as HTMLButtonElement;
+            form?.click();
         }, 100);
     };
 
@@ -298,106 +294,144 @@ ${activeDoc.extractedText.substring(0, 30000)}
 
         // Auto-submit
         setTimeout(() => {
-            const form = document.querySelector('.chat-input-area') as HTMLFormElement;
-            form?.requestSubmit();
+            const form = document.querySelector('button[type="submit"]') as HTMLButtonElement;
+            form?.click();
         }, 100);
     };
 
     return (
-        <div className="playground-chat">
-            <div className="chat-header">
-                <div className="chat-title">
-                    <Sparkles size={16} />
-                    <h3>Agent Chat</h3>
+        // 1. Root: h-full + Flex Column + Relative
+        <div className="flex flex-col h-full bg-slate-50 border border-slate-200 rounded-xl overflow-hidden shadow-sm relative isolate">
+
+            {/* 2. Header: Flex None */}
+            <div className="flex-none flex items-center justify-between px-4 py-3 bg-white/80 border-b border-slate-200 backdrop-blur-sm z-10">
+                <div className="flex items-center gap-2">
+                    <Sparkles size={16} className="text-blue-500" />
+                    <h3 className="m-0 text-sm font-bold text-slate-800">Agent Chat</h3>
                 </div>
-                <div className="chat-actions">
+                <div className="flex gap-2">
                     <button
-                        className="quick-action"
+                        className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-slate-600 bg-white border border-slate-200 rounded hover:bg-blue-50 transition-colors"
                         onClick={handleInferSchema}
                         disabled={isProcessing || documents.length === 0}
-                        title="自动推断 Schema"
                     >
-                        🔍 推断字段
+                        🔍 推断
                     </button>
                     <button
-                        className="quick-action"
+                        className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-slate-600 bg-white border border-slate-200 rounded hover:bg-blue-50 transition-colors"
                         onClick={handleDefineSchema}
                         disabled={isProcessing}
-                        title="帮我定义字段"
                     >
-                        💡 帮我定义
+                        💡 帮助
                     </button>
                     {pendingSchema && pendingSchema.length > 0 && (
                         <button
-                            className="quick-action confirm-schema"
+                            className="px-2 py-1 text-xs font-medium text-white bg-green-500 border border-green-600 rounded hover:bg-green-600 shadow-sm animate-pulse"
                             onClick={handleConfirmSchema}
-                            title="确认并应用字段"
                         >
-                            ✅ 确认字段 ({pendingSchema.length})
+                            ✅ 确认 ({pendingSchema.length})
                         </button>
                     )}
                     {schema.length > 0 && activeDocumentId && (
                         <button
-                            className="quick-action extract-data"
+                            className="px-2 py-1 text-xs font-medium text-white bg-blue-500 border border-blue-600 rounded hover:bg-blue-600 shadow-sm"
                             onClick={handleExtractData}
                             disabled={isProcessing}
-                            title="从当前文档提取数据"
                         >
-                            📥 提取数据
+                            📥 提取
                         </button>
                     )}
                 </div>
             </div>
 
-            <div className="pg-chat-messages">
+            {/* 3. Messages: Flex-1 + min-h-0 (CRITICAL FIX) */}
+            <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-4 bg-slate-50">
+                {messages.length === 0 && (
+                    <div className="h-full flex flex-col items-center justify-center text-slate-400 opacity-50">
+                        <Sparkles size={48} />
+                        <p className="mt-2 text-sm">准备就绪，请开始对话</p>
+                    </div>
+                )}
+
                 {messages.map((msg) => (
-                    <div key={msg.id} className={`pg-message pg-message--${msg.role}`}>
-                        <div className="pg-message-avatar">
+                    <div
+                        key={msg.id}
+                        className={`flex gap-3 max-w-[90%] w-fit ${msg.role === 'user' ? 'ml-auto flex-row-reverse' : ''
+                            }`}
+                    >
+                        <div className={`
+                            flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm border shadow-sm
+                            ${msg.role === 'agent' ? 'bg-white border-slate-200' :
+                                msg.role === 'user' ? 'bg-blue-600 border-blue-700 text-white' :
+                                    'bg-orange-100 border-orange-200'}
+                        `}>
                             {msg.role === 'agent' ? '🤖' : msg.role === 'user' ? '👤' : '⚙️'}
                         </div>
-                        <div className="pg-message-bubble">
-                            <div className="pg-message-text">
+
+                        <div className={`
+                            px-4 py-2.5 rounded-2xl text-sm leading-relaxed shadow-sm
+                            ${msg.role === 'user'
+                                ? 'bg-blue-600 text-white rounded-tr-none'
+                                : msg.role === 'system'
+                                    ? 'bg-orange-50 text-orange-800 border border-orange-100 rounded-tl-none'
+                                    : 'bg-white text-slate-700 border border-slate-200 rounded-tl-none'}
+                        `}>
+                            <div className="whitespace-pre-wrap">
                                 {msg.role === 'user' ? (
                                     msg.content
                                 ) : (
                                     <MessageContent content={msg.content} />
                                 )}
                             </div>
-                            <span className="pg-message-time">
-                                {msg.timestamp.toLocaleTimeString('zh-CN', {
-                                    hour: '2-digit',
-                                    minute: '2-digit',
-                                })}
+                            <span className={`block mt-1 text-[10px] opacity-70 ${msg.role === 'user' ? 'text-blue-100' : 'text-slate-400'}`}>
+                                {msg.timestamp.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}
                             </span>
                         </div>
                     </div>
                 ))}
 
-                {/* Thinking Process */}
                 {(isProcessing || thinkingSteps.length > 0) && (
-                    <ThinkingProcess
-                        steps={thinkingSteps}
-                        isThinking={isProcessing}
-                        collapsed={!showThinking}
-                        onToggle={() => setShowThinking(!showThinking)}
-                    />
+                    <div className="ml-11 max-w-[85%]">
+                        <ThinkingProcess
+                            steps={thinkingSteps}
+                            isThinking={isProcessing}
+                            collapsed={!showThinking}
+                            onToggle={() => setShowThinking(!showThinking)}
+                        />
+                    </div>
                 )}
 
-                <div ref={messagesEndRef} />
+                <div ref={messagesEndRef} className="h-4" />
             </div>
 
-            <form className="chat-input-area" onSubmit={handleSubmit}>
-                <input
-                    type="text"
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    placeholder="描述您想提取的信息，例如：提取发票中的供应商、日期和金额"
-                    disabled={isProcessing}
-                />
-                <button type="submit" disabled={isProcessing || !input.trim()}>
-                    {isProcessing ? <Loader2 size={18} className="spinning" /> : <Send size={18} />}
-                </button>
-            </form>
+            {/* 4. 输入框区域：颜色修复版 */}
+            <div className="flex-none p-4 bg-white border-t border-gray-200 z-50 shadow-[0_-4px_20px_-5px_rgba(0,0,0,0.1)]">
+                {/* 修复点：border-slate-300 -> border-gray-400 (加深)，border -> border-2 (加粗) */}
+                <div className="max-w-4xl mx-auto bg-gray-50 rounded-2xl border-2 border-gray-400 p-2 flex items-end gap-2 focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500 transition-all">
+                    <form
+                        className="flex-1 flex gap-2"
+                        onSubmit={handleSubmit}
+                    >
+                        <input
+                            type="text"
+                            value={input}
+                            onChange={(e) => setInput(e.target.value)}
+                            // 修复点：text-slate-900 -> text-gray-900 (确保文字可见)
+                            className="flex-1 px-3 py-2 text-sm bg-transparent border-none outline-none text-gray-900 placeholder:text-gray-500 font-medium"
+                            placeholder="描述您想提取的信息..."
+                            disabled={isProcessing}
+                            autoComplete="off"
+                        />
+                        <button
+                            type="submit"
+                            className="w-10 h-10 flex-shrink-0 flex items-center justify-center bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-xl shadow-md transition-all"
+                            disabled={isProcessing || !input.trim()}
+                        >
+                            {isProcessing ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
+                        </button>
+                    </form>
+                </div>
+            </div>
         </div>
     );
 };
@@ -445,7 +479,7 @@ function parseAgentResponse(content: string): ParsedResponse {
                 if (Array.isArray(parsed) && parsed[0]?.name && parsed[0]?.type) {
                     result.schema = parsed;
                 }
-            } catch (e) {
+            } catch {
                 // Ignore parse errors for fallback
             }
         }
@@ -618,7 +652,7 @@ function parseAgentResponse(content: string): ParsedResponse {
                     }
                     console.log('[Parser] Extracted data from JSON code block:', result.extraction);
                 }
-            } catch (e) {
+            } catch {
                 // Ignore JSON parse errors for fallback
             }
         }
@@ -633,7 +667,7 @@ function parseAgentResponse(content: string): ParsedResponse {
     // If schema was found, remove it from answer and clean up
     if (result.schema && !result.answer) {
         // Remove schema tags and JSON from content for display
-        let cleanContent = content
+        const cleanContent = content
             .replace(/<schema>[\s\S]*?<\/schema>/gi, '')
             .replace(/```json[\s\S]*?```/g, '')
             .trim();

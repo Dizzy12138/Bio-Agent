@@ -321,7 +321,7 @@ export const useBioExtractStore = create<BioExtractState>((set, get) => ({
                     // 限制行数以防止 Context Window 爆炸
                     const LIMIT = 20;
                     const rows = dbResult.values.slice(0, LIMIT).map(row => {
-                        const obj: Record<string, any> = {};
+                        const obj: Record<string, unknown> = {};
                         headers.forEach((h, i) => {
                             obj[h] = row[i];
                         });

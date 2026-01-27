@@ -23,6 +23,7 @@ export const SkillsPage: React.FC = () => {
 
     useEffect(() => {
         fetchSkills();
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- 组件初始化时只执行一次
     }, []);
 
     const fetchSkills = async () => {
@@ -51,7 +52,7 @@ export const SkillsPage: React.FC = () => {
             } else {
                 error('重置失败');
             }
-        } catch (e) {
+        } catch {
             error('网络错误');
         } finally {
             setLoading(false);
@@ -93,7 +94,7 @@ export const SkillsPage: React.FC = () => {
             } else {
                 error('操作失败');
             }
-        } catch (e) {
+        } catch {
             error('网络错误');
         }
     };

@@ -18,6 +18,22 @@ const COLORS: Record<EntityType, string> = {
     organism: '#ec4899'
 };
 
+// 预定义的骨架屏宽度值，避免在渲染时使用 Math.random()
+const SKELETON_WIDTHS = [76, 52, 89, 45, 91, 68, 54, 82, 47, 73, 95, 61];
+
+/**
+ * 基于 value 的确定性 shuffle，避免使用 Math.random()
+ * 每次相同输入产生相同输出，保证渲染纯度
+ */
+function deterministicShuffle<T extends { value: number }>(arr: T[]): T[] {
+    return [...arr].sort((a, b) => {
+        // 使用 value 的小数部分作为排序依据
+        const aKey = (a.value * 7919) % 1000;
+        const bKey = (b.value * 7919) % 1000;
+        return aKey - bKey;
+    });
+}
+
 /**
  * WordCloud - 高频共现词云
  * 
@@ -37,11 +53,14 @@ export const WordCloud: React.FC<WordCloudProps> = ({
         const minValue = Math.min(...words.map(w => w.value));
         const range = maxValue - minValue || 1;
 
-        return words.map(word => ({
+        const mapped = words.map(word => ({
             ...word,
             fontSize: 12 + ((word.value - minValue) / range) * 24, // 12px - 36px
             opacity: 0.5 + ((word.value - minValue) / range) * 0.5  // 0.5 - 1
-        })).sort(() => Math.random() - 0.5); // 随机排序
+        }));
+
+        // 使用确定性 shuffle 替代 Math.random()
+        return deterministicShuffle(mapped);
     }, [words]);
 
     // Loading 状态
@@ -49,12 +68,12 @@ export const WordCloud: React.FC<WordCloudProps> = ({
         return (
             <div className="word-cloud word-cloud--loading">
                 <div className="word-cloud__skeleton">
-                    {[...Array(12)].map((_, i) => (
+                    {SKELETON_WIDTHS.map((width, i) => (
                         <span
                             key={i}
                             className="word-cloud__skeleton-word"
                             style={{
-                                width: 40 + Math.random() * 60,
+                                width,
                                 animationDelay: `${i * 0.1}s`
                             }}
                         />

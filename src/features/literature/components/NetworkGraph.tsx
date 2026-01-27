@@ -159,6 +159,7 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
     // 初始居中
     useEffect(() => {
         centerGraph();
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- 只在节点数量变化时触发居中
     }, [data.nodes.length]);
 
     // 鼠标事件处理

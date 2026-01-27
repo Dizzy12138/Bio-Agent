@@ -19,7 +19,8 @@ export const Input: React.FC<InputProps> = ({
     id,
     ...props
 }) => {
-    const inputId = id || `input-${Math.random().toString(36).slice(2, 9)}`;
+    const generatedId = React.useId();
+    const inputId = id || generatedId;
 
     return (
         <div className={`input-wrapper ${className}`}>
@@ -61,7 +62,8 @@ export const TextArea: React.FC<TextAreaProps> = ({
     id,
     ...props
 }) => {
-    const textareaId = id || `textarea-${Math.random().toString(36).slice(2, 9)}`;
+    const generatedId = React.useId();
+    const textareaId = id || generatedId;
 
     return (
         <div className={`input-wrapper ${className}`}>

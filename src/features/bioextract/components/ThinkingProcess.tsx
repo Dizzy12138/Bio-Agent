@@ -111,7 +111,7 @@ export const ThinkingProcess: React.FC<ThinkingProcessProps> = ({
             {/* 步骤列表 */}
             {!collapsed && (
                 <div className="p-4 space-y-4">
-                    {steps.map((step, index) => {
+                    {steps.map((step) => {
                         const config = STEP_CONFIG[step.type] || STEP_CONFIG.analyzing;
                         return (
                             <div key={step.id} className="relative pl-6">
@@ -129,7 +129,7 @@ export const ThinkingProcess: React.FC<ThinkingProcessProps> = ({
                                     {/* SQL 显示 */}
                                     {typeof step.metadata?.sql === 'string' && (
                                         <div className="mt-2 bg-gray-900 rounded-lg p-3 text-xs font-mono text-gray-300 overflow-x-auto">
-                                            {step.metadata.sql}
+                                            {step.metadata.sql as string}
                                         </div>
                                     )}
 

@@ -29,14 +29,15 @@ export const DocumentList: React.FC = () => {
         for (const file of Array.from(files)) {
             const isImage = file.type.startsWith('image/');
             const isPdf = file.type === 'application/pdf';
+            const isText = file.type === 'text/plain';
 
-            if (!isImage && !isPdf) {
+            if (!isImage && !isPdf && !isText) {
                 console.warn(`Skipping unsupported file: ${file.name}`);
                 continue;
             }
 
-            // Create object URL for preview
-            const url = URL.createObjectURL(file);
+            // Create object URL for preview (skip for text)
+            const url = isText ? '' : URL.createObjectURL(file);
 
             // Read as base64 for VLM (only for images for now)
             let base64: string | undefined;
@@ -44,13 +45,20 @@ export const DocumentList: React.FC = () => {
                 base64 = await fileToBase64(file);
             }
 
+            // For TXT files, read content directly
+            let extractedText: string | undefined;
+            if (isText) {
+                extractedText = await file.text();
+            }
+
             newDocs.push({
                 id: `doc-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
                 name: file.name,
-                type: isImage ? 'image' : 'pdf',
+                type: isText ? 'text' : (isImage ? 'image' : 'pdf'),
                 url,
                 file,
                 base64,
+                extractedText,
             });
         }
 
@@ -93,7 +101,7 @@ export const DocumentList: React.FC = () => {
                 ref={fileInputRef}
                 type="file"
                 multiple
-                accept="image/*,.pdf"
+                accept="image/*,.pdf,.txt"
                 onChange={handleFileSelect}
                 style={{ display: 'none' }}
             />
@@ -103,7 +111,7 @@ export const DocumentList: React.FC = () => {
                     <div className="empty-state" onClick={handleUploadClick}>
                         <Upload size={24} />
                         <p>Click to upload documents</p>
-                        <span>Supports images and PDFs</span>
+                        <span>Supports images, PDFs, and TXT files</span>
                     </div>
                 ) : (
                     documents.map((doc) => (
@@ -115,6 +123,10 @@ export const DocumentList: React.FC = () => {
                             <div className="doc-thumbnail">
                                 {doc.type === 'image' ? (
                                     <img src={doc.url} alt={doc.name} />
+                                ) : doc.type === 'text' ? (
+                                    <div className="pdf-icon">
+                                        <FileText size={20} />
+                                    </div>
                                 ) : (
                                     <div className="pdf-icon">
                                         <FileText size={20} />

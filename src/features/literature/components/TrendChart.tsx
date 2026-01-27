@@ -18,12 +18,12 @@ export const TrendChart: React.FC<TrendChartProps> = ({
     data,
     loading = false
 }) => {
-    // 图表尺寸配置
-    const config = {
+    // 图表尺寸配置（使用 useMemo 避免每次渲染创建新对象）
+    const config = useMemo(() => ({
         width: 400,
         height: 200,
         padding: { top: 20, right: 20, bottom: 40, left: 50 }
-    };
+    }), []);
 
     const chartWidth = config.width - config.padding.left - config.padding.right;
     const chartHeight = config.height - config.padding.top - config.padding.bottom;

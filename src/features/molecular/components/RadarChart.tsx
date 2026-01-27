@@ -31,13 +31,13 @@ export const RadarChart: React.FC<RadarChartProps> = ({
     thresholds = DEFAULT_THRESHOLDS,
     loading = false
 }) => {
-    // 雷达图配置
-    const config = {
+    // 雷达图配置（使用 useMemo 避免每次渲染时创建新对象）
+    const config = useMemo(() => ({
         size: 280,
         center: 140,
         maxRadius: 100,
         levels: 5
-    };
+    }), []);
 
     // 指标定义
     const metrics = useMemo(() => [
@@ -255,7 +255,7 @@ export const RadarChart: React.FC<RadarChartProps> = ({
 
             {/* 详细数据 */}
             <div className="radar-chart__details">
-                {metrics.map((metric, _i) => {
+                {metrics.map((metric) => {
                     const value = data[metric.key as keyof LipinskiRule] as number;
                     const isViolation = value > metric.threshold;
                     return (

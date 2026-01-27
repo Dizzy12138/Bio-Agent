@@ -237,6 +237,7 @@ export function isSupportedFile(file: File): boolean {
         'image/jpg',
         'image/tiff',
         'image/bmp',
+        'text/plain',
     ];
     return supportedTypes.includes(file.type);
 }
@@ -245,5 +246,5 @@ export function isSupportedFile(file: File): boolean {
  * Get supported file extensions for file input
  */
 export function getSupportedExtensions(): string {
-    return '.pdf,.png,.jpg,.jpeg,.tiff,.bmp';
+    return '.pdf,.png,.jpg,.jpeg,.tiff,.bmp,.txt';
 }

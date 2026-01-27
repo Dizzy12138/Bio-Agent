@@ -171,10 +171,11 @@ export class BioExtractAgent {
     /**
      * 尝试解析 JSON，支持简单的自动修复
      */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     private tryParseJson(jsonStr: string): any {
         try {
             return JSON.parse(jsonStr);
-        } catch (e) {
+        } catch {
             // 简单的修复尝试
             let fixed = jsonStr.trim();
             // 1. 补全结尾
@@ -189,7 +190,7 @@ export class BioExtractAgent {
 
             try {
                 return JSON.parse(fixed);
-            } catch (e2) {
+            } catch {
                 console.warn('Failed to heal JSON:', jsonStr);
                 return null;
             }
@@ -268,7 +269,7 @@ export class BioExtractAgent {
         let finalData = null;
 
         // 1. 初始化消息历史
-        let messages: ChatMessage[] = [
+        const messages: ChatMessage[] = [
             { role: 'system', content: getSystemPrompt() + `\n\n## Database Schema\n${context.databaseSchema}` },
             ...context.conversationHistory.filter(m => m.role !== 'system'),
             { role: 'user', content: context.userMessage }
@@ -308,7 +309,8 @@ export class BioExtractAgent {
                     this.addStep('tool_calling', `调用工具: ${tool}`, { tool, params });
 
                     // 特殊处理上下文注入 (例如 OCR 需要 fileUrl)
-                    const toolParams: any = { ...params };
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    const toolParams: Record<string, any> = { ...params };
                     if (tool === 'mcp-ocr' && !toolParams.fileUrl && context.activeDocument) {
                         toolParams.fileUrl = context.activeDocument.url;
                         this.addStep('planning', `自动注入文档 URL: ${context.activeDocument.url}`);
@@ -337,8 +339,8 @@ export class BioExtractAgent {
 
                     // Record Call
                     toolCalls.push({ tool, params: toolParams, result: finalData });
-                    if (tool === 'mcp-sql') {
-                        executedSQLs.push((params as any).sql);
+                    if (tool === 'mcp-sql' && params && typeof params === 'object' && 'sql' in params) {
+                        executedSQLs.push(String((params as { sql?: string }).sql));
                     }
 
                     // Append to History
