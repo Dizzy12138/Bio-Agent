@@ -5,7 +5,8 @@
  * 替代原来的 SQLite 数据库操作
  */
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8001/api/v1';
+// 使用相对路径以便通过本机 IP 或公网代理访问时 API 走同源并由 Vite 代理到后端
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
 
 // =============================================
 // 类型定义
@@ -63,7 +64,7 @@ class BioExtractBackendAPI {
     private baseUrl: string;
 
     constructor(baseUrl: string = API_BASE_URL) {
-        this.baseUrl = baseUrl;
+        this.baseUrl = baseUrl || '/api/v1';
     }
 
     private async request<T>(endpoint: string, options?: RequestInit): Promise<T> {
@@ -108,13 +109,13 @@ class BioExtractBackendAPI {
         queryParams.append('page', String(params.page || 1));
         queryParams.append('pageSize', String(params.pageSize || 20));
 
-        // API 返回 { items, total, hasMore }，需要转换为 { materials, total, hasMore }
-        const response = await this.request<{ items: Material[]; total: number; hasMore: boolean }>(
+        // API 返回 { materials, total, hasMore }（或兼容 items）
+        const response = await this.request<{ materials?: Material[]; items?: Material[]; total: number; hasMore: boolean }>(
             `/materials?${queryParams.toString()}`
         );
 
         return {
-            materials: response.items || [],
+            materials: response.materials ?? response.items ?? [],
             total: response.total,
             hasMore: response.hasMore,
         };

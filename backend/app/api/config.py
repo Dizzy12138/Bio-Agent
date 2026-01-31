@@ -7,7 +7,10 @@ router = APIRouter()
 
 @router.on_event("startup")
 async def startup_event():
-    await config_service.init_defaults()
+    try:
+        await config_service.init_defaults()
+    except Exception as e:
+        print(f"Config init_defaults skipped (DB may be unavailable): {e}")
 
 @router.get("/config/agents", response_model=List[AgentConfig])
 async def get_agents():

@@ -53,11 +53,13 @@ class ConfigService:
     def col_mcp(self): return mongodb.db["mcp_configs"]
 
     async def init_defaults(self):
-        if await self.col_agents().count_documents({}) == 0:
-            for a in DEFAULT_AGENTS: await self.col_agents().insert_one(a)
-            
-        if await self.col_providers().count_documents({}) == 0:
-            for p in DEFAULT_PROVIDERS: await self.col_providers().insert_one(p)
+        try:
+            if await self.col_agents().count_documents({}) == 0:
+                for a in DEFAULT_AGENTS: await self.col_agents().insert_one(a)
+            if await self.col_providers().count_documents({}) == 0:
+                for p in DEFAULT_PROVIDERS: await self.col_providers().insert_one(p)
+        except Exception as e:
+            print(f"Config init_defaults skipped (DB unavailable): {e}")
 
     # --- Agents ---
     async def get_agent(self, agent_id: str) -> Optional[AgentConfig]:

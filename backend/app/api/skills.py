@@ -7,7 +7,10 @@ router = APIRouter()
 
 @router.on_event("startup")
 async def startup_event():
-    await skill_service.init_defaults()
+    try:
+        await skill_service.init_defaults()
+    except Exception as e:
+        print(f"Skills init_defaults skipped (DB may be unavailable): {e}")
 
 @router.get("/config/skills", response_model=List[SkillConfig])
 async def get_skills():

@@ -15,6 +15,8 @@ export default defineConfig({
     },
   },
   server: {
+    host: true, // 允许通过本机 IP 或公网代理访问（默认仅 localhost）
+    port: 5173,
     proxy: {
       // Proxy MinerU API requests to bypass CORS
       // Target can be overridden via VITE_MINERU_URL env variable

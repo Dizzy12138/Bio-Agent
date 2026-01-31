@@ -32,8 +32,8 @@ import os
 # Load environment variables
 load_dotenv(Path(__file__).parent.parent / ".env")
 
-MONGO_URI = os.getenv("MONGODB_URI", "mongodb://localhost:27017")
-DB_NAME = os.getenv("MONGODB_DB_NAME", os.getenv("MONGODB_DB", "biomedical_agent"))
+MONGO_URI = os.getenv("MONGODB_URL", os.getenv("MONGODB_URI", "mongodb://localhost:27017"))
+DB_NAME = os.getenv("MONGODB_DB_NAME", os.getenv("MONGODB_DB", "biomedical_platform"))
 
 # 数据文件路径（相对于项目根目录）
 DATA_DIR = Path(__file__).parent.parent.parent / "src" / "features" / "bioextract" / "data"

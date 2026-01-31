@@ -54,11 +54,13 @@ class SkillService:
         return mongodb.db["skills"]
 
     async def init_defaults(self):
-        # Register native skills if not present
-        for skill in NATIVE_SKILLS:
-            existing = await self.get_skill(skill.id)
-            if not existing:
-                await self.collection().insert_one(skill.model_dump())
+        try:
+            for skill in NATIVE_SKILLS:
+                existing = await self.get_skill(skill.id)
+                if not existing:
+                    await self.collection().insert_one(skill.model_dump())
+        except Exception as e:
+            print(f"Skills init_defaults skipped (DB unavailable): {e}")
 
     async def get_skill(self, skill_id: str) -> Optional[SkillConfig]:
         doc = await self.collection().find_one({"id": skill_id})
