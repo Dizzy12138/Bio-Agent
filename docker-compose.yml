@@ -3,12 +3,12 @@ version: '3.8'
 services:
   # Python FastAPI Backend
   backend:
-    build: 
+    build:
       context: ./backend
       dockerfile: Dockerfile
     container_name: biomedical-backend
     ports:
-      - "8000:8000"
+      - "8001:8001"
     volumes:
       - ./backend:/app
     environment:

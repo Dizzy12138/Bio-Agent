@@ -28,7 +28,7 @@ export const SYSTEM_MCP_TOOLS: MCPTool[] = [
         description: '文档 OCR 文字识别，支持 PDF、图片等格式',
         icon: '📄',
         category: 'ocr',
-        enabled: true,  // Default enabled since we have a real API
+        enabled: true,
         isSystem: true,
         configSchema: [
             { key: 'apiUrl', label: 'API URL', type: 'text', required: true, placeholder: 'http://140.206.138.45:8000', default: 'http://140.206.138.45:8000' },
@@ -37,33 +37,59 @@ export const SYSTEM_MCP_TOOLS: MCPTool[] = [
         config: { apiUrl: 'http://140.206.138.45:8000', useMock: false },
     },
     {
-        id: 'mcp-sql',
-        name: 'SQL 执行器',
-        description: '执行 SQL 查询，用于数据库数据检索',
-        icon: '🗄️',
-        category: 'database',
+        id: 'search-materials',
+        name: '搜索生物材料',
+        description: '搜索生物材料数据库，支持按名称、分类、关键词查询。返回材料列表及其关联文献数量。',
+        icon: '🧬',
+        category: 'bioextract',
         enabled: true,
         isSystem: true,
-        configSchema: [
-            { key: 'dbPath', label: '数据库路径', type: 'text', required: true, placeholder: '/path/to/database.db' },
-            { key: 'timeout', label: '超时时间(ms)', type: 'number', required: false, default: 10000 },
-        ],
-        config: { timeout: 10000 },
+        configSchema: [],
+        config: {},
     },
     {
-        id: 'mcp-knowledge',
-        name: '知识库检索',
-        description: '从向量数据库中检索相关知识片段',
+        id: 'search-documents',
+        name: '搜索文献',
+        description: '搜索文献数据库，支持按标题、作者、关键词查询。返回文献列表和基本信息。',
         icon: '📚',
-        category: 'knowledge',
-        enabled: false,
+        category: 'bioextract',
+        enabled: true,
         isSystem: true,
-        configSchema: [
-            { key: 'vectorDbUrl', label: '向量数据库 URL', type: 'text', required: true, placeholder: 'http://localhost:6333' },
-            { key: 'collectionName', label: '集合名称', type: 'text', required: true, placeholder: 'documents' },
-            { key: 'topK', label: '返回数量', type: 'number', required: false, default: 5 },
-        ],
-        config: { topK: 5 },
+        configSchema: [],
+        config: {},
+    },
+    {
+        id: 'get-material-details',
+        name: '获取材料详情',
+        description: '获取指定材料的详细信息，包括组成、属性、关联文献等。',
+        icon: '🔬',
+        category: 'bioextract',
+        enabled: true,
+        isSystem: true,
+        configSchema: [],
+        config: {},
+    },
+    {
+        id: 'get-paper-content',
+        name: '获取论文内容',
+        description: '获取指定论文的 Markdown 全文内容。需要提供论文 ID。',
+        icon: '📄',
+        category: 'bioextract',
+        enabled: true,
+        isSystem: true,
+        configSchema: [],
+        config: {},
+    },
+    {
+        id: 'get-bioextract-stats',
+        name: '获取统计信息',
+        description: '获取 BioExtract 数据库的统计信息：递送系统数量、微生物数量、文献数量等。',
+        icon: '📊',
+        category: 'bioextract',
+        enabled: true,
+        isSystem: true,
+        configSchema: [],
+        config: {},
     },
     {
         id: 'mcp-chart',
@@ -211,19 +237,81 @@ export async function executeTool(toolId: string, params: MCPToolParams): Promis
                 result = await executeOCRTool(params, tool.config);
                 break;
             }
-            case 'mcp-sql': {
-                const { executeSQLTool } = await import('./tools/sqlTool');
-                result = await executeSQLTool(params, tool.config);
+
+            // ===== BioExtract API 工具 =====
+            case 'search-materials': {
+                const { bioextractAPI } = await import('../bioextract/api/backendAPI');
+                const input = params.input as { query?: string; category?: string; subcategory?: string; limit?: number };
+                const data = await bioextractAPI.searchMaterials({
+                    query: input.query || '',
+                    category: input.category,
+                    subcategory: input.subcategory,
+                    pageSize: input.limit || 10,
+                    sortBy: 'paper_count',
+                    sortOrder: 'desc',
+                });
+                result = { success: true, output: data };
                 break;
             }
-            case 'mcp-knowledge':
-                // Placeholder
-                result = { success: false, output: null, error: 'Knowledge tool not yet implemented' };
+
+            case 'search-documents': {
+                const { bioextractAPI } = await import('../bioextract/api/backendAPI');
+                const input = params.input as { query?: string; limit?: number };
+                const data = await bioextractAPI.searchDocuments({
+                    query: input.query || '',
+                    pageSize: input.limit || 10,
+                });
+                result = { success: true, output: data };
                 break;
+            }
+
+            case 'get-material-details': {
+                const { bioextractAPI } = await import('../bioextract/api/backendAPI');
+                const input = params.input as { name: string };
+                if (!input.name) {
+                    result = { success: false, output: null, error: '需要提供材料名称 (name)' };
+                } else {
+                    // 先搜索获取详情
+                    const data = await bioextractAPI.searchMaterials({
+                        query: input.name,
+                        pageSize: 1,
+                    });
+                    if (data.materials.length > 0) {
+                        result = { success: true, output: data.materials[0] };
+                    } else {
+                        result = { success: false, output: null, error: `未找到材料: ${input.name}` };
+                    }
+                }
+                break;
+            }
+
+            case 'get-paper-content': {
+                const { bioextractAPI } = await import('../bioextract/api/backendAPI');
+                const input = params.input as { paper_id: string };
+                if (!input.paper_id) {
+                    result = { success: false, output: null, error: '需要提供论文 ID (paper_id)' };
+                } else {
+                    try {
+                        const data = await bioextractAPI.getPaperMarkdown(input.paper_id);
+                        result = { success: true, output: data };
+                    } catch (e) {
+                        result = { success: false, output: null, error: `获取论文内容失败: ${e}` };
+                    }
+                }
+                break;
+            }
+
+            case 'get-bioextract-stats': {
+                const { bioextractAPI } = await import('../bioextract/api/backendAPI');
+                const data = await bioextractAPI.getStats();
+                result = { success: true, output: data };
+                break;
+            }
+
             case 'mcp-chart':
-                // Placeholder
                 result = { success: false, output: null, error: 'Chart tool not yet implemented' };
                 break;
+
             default:
                 result = { success: false, output: null, error: `Unknown tool: ${toolId}` };
         }

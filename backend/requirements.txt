@@ -10,3 +10,4 @@ httpx
 python-multipart
 asyncpg
 pgvector
+anthropic>=0.40.0

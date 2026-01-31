@@ -33,7 +33,6 @@ export const BioExtractChat: React.FC = () => {
     const {
         session,
         isProcessing,
-        databaseStatus,
         llmConfigured,
         processLog,
         showProcessLog,
@@ -45,6 +44,9 @@ export const BioExtractChat: React.FC = () => {
         sendToAgent,
         toggleProcessLog,
         toggleThinking,
+        backendStats,
+        backendConnected,
+        knowledgeStats,
     } = useBioExtractStore();
 
     const [inputValue, setInputValue] = useState('');
@@ -104,9 +106,14 @@ export const BioExtractChat: React.FC = () => {
 
                     <div className="flex items-center gap-4">
                         <div className="flex items-center gap-2 text-xs font-medium px-3 py-1.5 bg-gray-50 rounded-full border border-gray-100">
-                            <div className={`flex items-center gap-1.5 ${databaseStatus?.initialized ? 'text-green-600' : 'text-gray-400'}`}>
+                            <div className={`flex items-center gap-1.5 ${backendConnected ? 'text-green-600' : 'text-red-400'}`}>
                                 <Database size={14} />
-                                <span>SQLite: {(databaseStatus?.totalRows || 0).toLocaleString()}</span>
+                                <span>Core: {(backendStats?.delivery_systems_count || 0) + (backendStats?.micro_features_count || 0)}</span>
+                            </div>
+                            <div className="w-px h-3 bg-gray-300 mx-1"></div>
+                            <div className={`flex items-center gap-1.5 ${knowledgeStats ? 'text-blue-600' : 'text-gray-400'}`}>
+                                <Dna size={14} />
+                                <span>KB: {(knowledgeStats?.totalDocuments || 0).toLocaleString()}</span>
                             </div>
                             <div className="w-px h-3 bg-gray-300 mx-1"></div>
                             <div className={`flex items-center gap-1.5 ${llmConfigured ? 'text-green-600' : 'text-amber-500'}`}>

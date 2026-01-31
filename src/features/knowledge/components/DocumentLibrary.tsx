@@ -1,7 +1,8 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useKnowledgeStore } from '../stores/knowledgeStore';
 import type { Document } from '../api/knowledgeAPI';
 import './DocumentLibrary.css';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface DocumentLibraryProps {
     categoryId: string | null;
@@ -11,7 +12,7 @@ interface DocumentLibraryProps {
     selectedItemId?: string;
 }
 
-// 状态标签配置
+// Status badge configuration
 const statusConfig = {
     pending: { label: '待处理', color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.1)' },
     parsing: { label: '解析中', color: '#3b82f6', bg: 'rgba(59, 130, 246, 0.1)' },
@@ -19,23 +20,15 @@ const statusConfig = {
     error: { label: '错误', color: '#ef4444', bg: 'rgba(239, 68, 68, 0.1)' },
 };
 
+const PAGE_SIZE = 20;
 
-
-// 格式化文件大小
-const formatFileSize = (bytes: number) => {
-    if (bytes < 1024) return `${bytes} B`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-};
-
-// 格式化日期
+// Format date
 const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
     return date.toLocaleDateString('zh-CN', { year: 'numeric', month: 'short', day: 'numeric' });
 };
 
 export const DocumentLibrary: React.FC<DocumentLibraryProps> = ({
-    categoryId,
     searchQuery,
     viewMode,
     onItemSelect,
@@ -44,18 +37,38 @@ export const DocumentLibrary: React.FC<DocumentLibraryProps> = ({
     const {
         searchResults: documents,
         isSearching: isLoading,
+        searchTotal,
         searchDocuments
     } = useKnowledgeStore();
 
-    // 当分类或搜索词变化时触发搜索
+    const [currentPage, setCurrentPage] = useState(1);
+    const totalPages = Math.ceil(searchTotal / PAGE_SIZE);
+
+    // Load documents when page or search changes
     useEffect(() => {
         searchDocuments({
             query: searchQuery,
-            knowledgeBaseIds: categoryId ? [categoryId] : undefined,
+            page: currentPage,
+            pageSize: PAGE_SIZE,
         });
-    }, [categoryId, searchQuery, searchDocuments]);
+    }, [currentPage, searchQuery, searchDocuments]);
 
-    const filteredDocuments = documents; // Already filtered by API/Store
+    // Reset to page 1 when search query changes
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchQuery]);
+
+    const handlePrevPage = () => {
+        if (currentPage > 1) {
+            setCurrentPage(currentPage - 1);
+        }
+    };
+
+    const handleNextPage = () => {
+        if (currentPage < totalPages) {
+            setCurrentPage(currentPage + 1);
+        }
+    };
 
     if (isLoading) {
         return (
@@ -67,7 +80,7 @@ export const DocumentLibrary: React.FC<DocumentLibraryProps> = ({
         );
     }
 
-    if (filteredDocuments.length === 0) {
+    if (documents.length === 0) {
         return (
             <div className="empty-state">
                 <svg className="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -82,16 +95,49 @@ export const DocumentLibrary: React.FC<DocumentLibraryProps> = ({
     }
 
     return (
-        <div className={viewMode === 'grid' ? 'content-grid' : 'content-list'}>
-            {filteredDocuments.map(doc => (
-                <DocumentCard
-                    key={doc.id}
-                    document={doc}
-                    viewMode={viewMode}
-                    isSelected={selectedItemId === doc.id}
-                    onClick={() => onItemSelect(doc)}
-                />
-            ))}
+        <div className="flex flex-col h-full">
+            {/* Document List */}
+            <div className={`flex-1 overflow-y-auto ${viewMode === 'grid' ? 'content-grid' : 'content-list'}`}>
+                {documents.map(doc => (
+                    <DocumentCard
+                        key={doc.id}
+                        document={doc}
+                        viewMode={viewMode}
+                        isSelected={selectedItemId === doc.id}
+                        onClick={() => onItemSelect(doc)}
+                    />
+                ))}
+            </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+                <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200 bg-white">
+                    <div className="text-sm text-gray-500">
+                        共 {searchTotal} 篇文献，第 {currentPage}/{totalPages} 页
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={handlePrevPage}
+                            disabled={currentPage === 1}
+                            className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded-md border border-gray-300 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            <ChevronLeft size={16} />
+                            上一页
+                        </button>
+                        <span className="px-3 py-1.5 text-sm font-medium bg-blue-50 text-blue-600 rounded-md">
+                            {currentPage}
+                        </span>
+                        <button
+                            onClick={handleNextPage}
+                            disabled={currentPage === totalPages}
+                            className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded-md border border-gray-300 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            下一页
+                            <ChevronRight size={16} />
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
@@ -121,7 +167,7 @@ const DocumentCard: React.FC<DocumentCardProps> = ({ document, viewMode, isSelec
                 <div className="document-list-content">
                     <h4 className="document-list-title">{document.title}</h4>
                     <p className="document-list-meta">
-                        {(document.authors || []).join(', ')} · {document.source} · {document.publishDate && formatDate(document.publishDate)}
+                        {(document.authors || []).slice(0, 3).join(', ')}{document.authors && document.authors.length > 3 ? ' 等' : ''} · {document.source} · {document.publishDate && formatDate(document.publishDate)}
                     </p>
                 </div>
                 <div className="document-list-status">
@@ -132,7 +178,7 @@ const DocumentCard: React.FC<DocumentCardProps> = ({ document, viewMode, isSelec
                         {status.label}
                     </span>
                 </div>
-                {document.citations && (
+                {document.citations !== undefined && document.citations > 0 && (
                     <div className="document-list-citations">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: 14, height: 14 }}>
                             <path d="M12 20V10M18 20V4M6 20v-4" />
@@ -151,53 +197,27 @@ const DocumentCard: React.FC<DocumentCardProps> = ({ document, viewMode, isSelec
         >
             <div className="document-card-header">
                 <div className="document-type-badge">
-                    {document.fileType?.toUpperCase() || 'DOC'}
+                    {document.fileType?.toUpperCase() || 'PDF'}
                 </div>
                 <span
                     className="status-badge"
-                    style={{ color: (status || statusConfig.indexed).color, background: (status || statusConfig.indexed).bg }}
+                    style={{ color: status.color, background: status.bg }}
                 >
-                    {document.status === 'parsing' && (
-                        <span className="status-spinner" />
-                    )}
                     {status.label}
                 </span>
             </div>
 
             <h3 className="document-card-title">{document.title}</h3>
 
-            <p className="document-card-authors">{(document.authors || []).join(', ')}</p>
+            <p className="document-card-authors">{(document.authors || []).slice(0, 3).join(', ')}</p>
 
-            <p className="document-card-abstract">{document.abstract}</p>
+            {document.abstract && (
+                <p className="document-card-abstract">{document.abstract.slice(0, 200)}...</p>
+            )}
 
             <div className="document-card-meta">
                 <span className="document-card-journal">{document.source}</span>
                 <span className="document-card-date">{document.publishDate && formatDate(document.publishDate)}</span>
-            </div>
-
-            <div className="document-card-footer">
-                <div className="document-card-keywords">
-                    {(document.keywords || []).slice(0, 3).map((keyword, i) => (
-                        <span key={i} className="keyword-tag">{keyword}</span>
-                    ))}
-                    {(document.keywords || []).length > 3 && (
-                        <span className="keyword-tag more">+{document.keywords!.length - 3}</span>
-                    )}
-                </div>
-
-                <div className="document-card-stats">
-                    {document.citations && (
-                        <span className="stat-item" title="引用次数">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: 14, height: 14 }}>
-                                <path d="M12 20V10M18 20V4M6 20v-4" />
-                            </svg>
-                            {document.citations}
-                        </span>
-                    )}
-                    <span className="stat-item" title="文件大小">
-                        {document.fileSize ? formatFileSize(document.fileSize) : '-'}
-                    </span>
-                </div>
             </div>
         </div>
     );

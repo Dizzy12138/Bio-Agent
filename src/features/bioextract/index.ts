@@ -23,20 +23,12 @@ export {
 // API
 export { bioextractAPI } from './api/bioextractAPI';
 
-// 数据服务（旧版内存查询）
+// 数据服务（旧版内存查询 - 已废弃，保留用于兼容性）
 export {
     dataService,
     type DrugDeliveryRecord,
     type DataSourceStatus,
 } from './api/dataService';
-
-// SQLite 数据库服务
-export {
-    sqliteDb,
-    TABLE_SCHEMAS,
-    type QueryResult,
-    type DatabaseStatus,
-} from './api/sqliteDatabase';
 
 // LLM 服务
 export {

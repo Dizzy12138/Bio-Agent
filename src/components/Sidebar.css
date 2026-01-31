@@ -38,6 +38,9 @@
 .sidebar__logo-img {
     height: 32px;
     width: auto;
+    max-width: 100px;
+    /* Prevent oversized logo from hiding the title */
+    flex-shrink: 0;
     object-fit: contain;
     filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1));
 }

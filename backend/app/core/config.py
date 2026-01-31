@@ -22,7 +22,11 @@ class Settings(BaseSettings):
     ANTHROPIC_API_KEY: str | None = None
     GEMINI_API_KEY: str | None = None
 
+    # External Paper API (for import_documents.py)
+    PAPER_API_TOKEN: str | None = None
+
     class Config:
         env_file = ".env"
+        extra = "ignore"  # Ignore unknown fields in .env
 
 settings = Settings()

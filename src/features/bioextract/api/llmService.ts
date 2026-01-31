@@ -42,17 +42,114 @@ const DEFAULT_CONFIG: Partial<LLMConfig> = {
     maxTokens: LLM_DEFAULT_MAX_TOKENS,
 };
 
-// 从 localStorage 获取配置
+// =============================================
+// Provider 缓存（从后端 API 同步）
+// =============================================
+const PROVIDERS_CACHE_KEY = 'llm_providers_cache';
+const PROVIDERS_CACHE_TTL = 60 * 1000; // 1 分钟缓存
+
+interface ProviderCache {
+    providers: Array<{
+        id: string;
+        name: string;
+        baseUrl: string;
+        apiKey: string;
+        models: string[];
+        isEnabled: boolean;
+    }>;
+    updatedAt: number;
+}
+
+// 获取缓存的 providers
+function getCachedProviders(): ProviderCache | null {
+    try {
+        const cached = localStorage.getItem(PROVIDERS_CACHE_KEY);
+        if (cached) {
+            const data = JSON.parse(cached) as ProviderCache;
+            // 检查缓存是否过期
+            if (Date.now() - data.updatedAt < PROVIDERS_CACHE_TTL) {
+                return data;
+            }
+        }
+    } catch (e) {
+        console.error('Failed to load providers cache:', e);
+    }
+    return null;
+}
+
+// 同步 providers 到缓存（使用内部端点获取完整 API Key）
+export async function syncProviders(): Promise<void> {
+    try {
+        // 使用 internal 端点获取未掩码的 API Key
+        const res = await fetch('/api/v1/config/providers/internal');
+        if (res.ok) {
+            const providers = await res.json();
+            const cache: ProviderCache = {
+                providers,
+                updatedAt: Date.now(),
+            };
+            localStorage.setItem(PROVIDERS_CACHE_KEY, JSON.stringify(cache));
+        }
+    } catch (e) {
+        console.error('Failed to sync providers:', e);
+    }
+}
+
+// 从 localStorage 或后端获取配置
 export function getLLMConfig(): LLMConfig | null {
+    // 1. 首先尝试从旧的 bioextract 配置读取（向后兼容）
     try {
         const stored = localStorage.getItem(LLM_CONFIG_STORAGE_KEY);
         if (stored) {
-            return JSON.parse(stored);
+            const config = JSON.parse(stored);
+            if (config.apiKey) {
+                return config;
+            }
         }
     } catch (e) {
         console.error('Failed to load LLM config:', e);
     }
+
+    // 2. 尝试从缓存的 providers 中获取第一个启用的
+    const cache = getCachedProviders();
+    if (cache && cache.providers.length > 0) {
+        const enabledProvider = cache.providers.find(p => p.isEnabled);
+        if (enabledProvider) {
+            // 根据 provider name 推断 provider type
+            const providerType = detectProviderType(enabledProvider.name, enabledProvider.baseUrl);
+            return {
+                provider: providerType,
+                apiKey: enabledProvider.apiKey,
+                baseUrl: enabledProvider.baseUrl,
+                model: enabledProvider.models?.[0] || 'gpt-4o-mini',
+                temperature: DEFAULT_CONFIG.temperature,
+                maxTokens: DEFAULT_CONFIG.maxTokens,
+            };
+        }
+    }
+
     return null;
+}
+
+// 根据 provider name 或 baseUrl 推断 provider type
+function detectProviderType(name: string, baseUrl: string): LLMConfig['provider'] {
+    const lowerName = name.toLowerCase();
+    const lowerUrl = baseUrl.toLowerCase();
+
+    if (lowerName.includes('gemini') || lowerUrl.includes('googleapis')) {
+        return 'gemini';
+    }
+    if (lowerName.includes('claude') || lowerName.includes('anthropic') || lowerUrl.includes('anthropic')) {
+        return 'anthropic';
+    }
+    if (lowerName.includes('deepseek') || lowerUrl.includes('deepseek')) {
+        return 'deepseek';
+    }
+    if (lowerUrl.includes('localhost') || lowerUrl.includes('127.0.0.1')) {
+        return 'local';
+    }
+    // 默认使用 OpenAI 兼容
+    return 'openai';
 }
 
 // 保存配置到 localStorage

@@ -25,7 +25,7 @@ export default defineConfig({
       },
       // Backend API Proxy
       '/api': {
-        target: 'http://localhost:8000',
+        target: 'http://localhost:8001',
         changeOrigin: true,
       },
     },

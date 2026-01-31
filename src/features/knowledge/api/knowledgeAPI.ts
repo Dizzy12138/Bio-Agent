@@ -67,15 +67,26 @@ export interface MaterialProperty {
 }
 
 // 材料数据
+// 材料数据
 export interface Material {
     id: string;
     name: string;
     category: string;
     subcategory?: string;
+    abbreviation?: string; // New
     properties: MaterialProperty[];
     composition?: Record<string, number>;
+
+    // Function & Application
+    functional_role?: string; // New
     applications: string[];
-    sources: string[];
+
+    // Source Tracking
+    source_doc_ids?: string[]; // New
+    paper_count?: number; // New
+    sources?: string[]; // Deprecated, keep for compatibility
+
+    metadata?: Record<string, unknown>; // New
     imageUrl?: string;
     createdAt: string;
     updatedAt: string;
@@ -265,11 +276,52 @@ class KnowledgeAPIService {
             return false;
         }
     }
+    /**
+     * 获取材料列表
+     */
+    async getMaterials(params: {
+        query?: string;
+        category?: string;
+        subcategory?: string;
+        hasPaper?: boolean;
+        sortBy?: string;
+        sortOrder?: string;
+        page?: number;
+        pageSize?: number;
+    }): Promise<APIResponse<{ materials: Material[]; total: number; page: number; pageSize: number; hasMore: boolean }>> {
+        const queryParams = new URLSearchParams();
+        if (params.query) queryParams.append('query', params.query);
+        if (params.category) queryParams.append('category', params.category);
+        if (params.subcategory) queryParams.append('subcategory', params.subcategory);
+        if (params.hasPaper !== undefined) queryParams.append('hasPaper', params.hasPaper.toString());
+        if (params.sortBy) queryParams.append('sortBy', params.sortBy);
+        if (params.sortOrder) queryParams.append('sortOrder', params.sortOrder);
+        if (params.page) queryParams.append('page', params.page.toString());
+        if (params.pageSize) queryParams.append('pageSize', params.pageSize.toString());
+
+        return this.request<{ materials: Material[]; total: number; page: number; pageSize: number; hasMore: boolean }>(
+            `/materials?${queryParams.toString()}`
+        );
+    }
+
+    /**
+     * 获取单个材料
+     */
+    async getMaterial(id: string): Promise<APIResponse<Material>> {
+        return this.request<Material>(`/materials/${id}`);
+    }
+
+    /**
+     * 获取材料统计
+     */
+    async getMaterialStats(): Promise<APIResponse<{ totalMaterials: number; totalAssemblies: number; categories: { category: string; count: number }[] }>> {
+        return this.request('/materials/stats');
+    }
 }
 
 // 默认配置 (可在运行时修改)
 const defaultConfig: KnowledgeAPIConfig = {
-    baseUrl: import.meta.env.VITE_KNOWLEDGE_API_URL || 'http://localhost:8000/api/v1',
+    baseUrl: import.meta.env.VITE_KNOWLEDGE_API_URL || '/api/v1',
     apiKey: import.meta.env.VITE_KNOWLEDGE_API_KEY || '',
 };
 
@@ -478,21 +530,56 @@ export const mockKnowledgeAPI = {
         return { success: false, error: 'Document not found' };
     },
 
-    async getMaterials(params: { query: string; categoryId?: string }): Promise<APIResponse<Material[]>> {
-        await new Promise(resolve => setTimeout(resolve, 600));
+    /**
+     * Get Materials List
+     */
+    async getMaterials(params: {
+        query?: string;
+        category?: string;
+        subcategory?: string;
+        functionalRole?: string;
+        page?: number;
+        pageSize?: number;
+    }): Promise<APIResponse<{ materials: Material[]; total: number; page: number; pageSize: number; hasMore: boolean }>> {
+        // Mock implementation for fallback
+        const query = params.query || '';
         let filtered = MOCK_MATERIALS.filter(mat =>
-            mat.name.toLowerCase().includes(params.query.toLowerCase()) ||
-            mat.applications.some(a => a.toLowerCase().includes(params.query.toLowerCase())) ||
-            mat.properties.some(p => p.name.toLowerCase().includes(params.query.toLowerCase()))
+            (query && (mat.name.toLowerCase().includes(query.toLowerCase()) ||
+                mat.applications.some(a => a.toLowerCase().includes(query.toLowerCase())) ||
+                mat.properties.some(p => p.name.toLowerCase().includes(query.toLowerCase())))) || !query
         );
 
-        if (params.categoryId && params.categoryId.startsWith('mat-')) {
-            filtered = filtered.filter(mat => mat.category === params.categoryId);
+        if (params.category) {
+            filtered = filtered.filter(mat => mat.category === params.category);
+        }
+        if (params.subcategory) {
+            filtered = filtered.filter(mat => mat.subcategory === params.subcategory);
+        }
+        if (params.functionalRole) {
+            filtered = filtered.filter(mat => mat.functional_role === params.functionalRole);
         }
 
-        return { success: true, data: filtered };
+        const page = params.page || 1;
+        const pageSize = params.pageSize || 10;
+        const start = (page - 1) * pageSize;
+        const end = start + pageSize;
+        const paginated = filtered.slice(start, end);
+
+        return {
+            success: true,
+            data: {
+                materials: paginated,
+                total: filtered.length,
+                page: page,
+                pageSize: pageSize,
+                hasMore: end < filtered.length,
+            },
+        };
     },
 
+    /**
+     * Get Single Material
+     */
     async getMaterial(id: string): Promise<APIResponse<Material>> {
         await new Promise(resolve => setTimeout(resolve, 300));
         const mat = MOCK_MATERIALS.find(m => m.id === id);
@@ -500,6 +587,29 @@ export const mockKnowledgeAPI = {
             return { success: true, data: mat };
         }
         return { success: false, error: 'Material not found' };
+    },
+
+    /**
+     * Get Material Stats
+     */
+    async getMaterialStats(): Promise<APIResponse<{ totalMaterials: number; totalAssemblies: number; categories: { category: string; count: number }[] }>> {
+        await new Promise(resolve => setTimeout(resolve, 300));
+        const totalMaterials = MOCK_MATERIALS.length;
+        const totalAssemblies = 0; // Mock value
+        const categoryCounts: Record<string, number> = {};
+        MOCK_MATERIALS.forEach(mat => {
+            categoryCounts[mat.category] = (categoryCounts[mat.category] || 0) + 1;
+        });
+        const categories = Object.entries(categoryCounts).map(([category, count]) => ({ category, count }));
+
+        return {
+            success: true,
+            data: {
+                totalMaterials,
+                totalAssemblies,
+                categories,
+            },
+        };
     },
 
     async getTemplates(params: { query: string; categoryId?: string }): Promise<APIResponse<PromptTemplate[]>> {

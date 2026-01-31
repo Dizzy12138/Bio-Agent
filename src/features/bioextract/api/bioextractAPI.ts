@@ -204,7 +204,7 @@ export const bioextractAPI = {
         totalRecords: number;
     }> {
         // Call backend API
-        const response = await fetch(`http://localhost:8000/api/v1/bioextract/atps/filter?inner_phase=${encodeURIComponent(innerPhase)}`);
+        const response = await fetch(`/api/v1/bioextract/atps/filter?inner_phase=${encodeURIComponent(innerPhase)}`);
         if (!response.ok) {
             throw new Error('API call failed');
         }
@@ -364,6 +364,308 @@ export const bioextractAPI = {
             ],
             atpsSourceIds: ['atps-001', 'atps-002', 'atps-003'],
         };
+    },
+
+    // =============================================
+    // Backend API Methods (新增后端接口)
+    // =============================================
+
+    /**
+     * 获取 BioExtract 数据统计
+     */
+    async getStats(): Promise<{
+        delivery_systems_count: number;
+        micro_features_count: number;
+        paper_tags_count: number;
+        atps_records_count: number;
+        last_updated: string | null;
+    }> {
+        const response = await fetch('/api/v1/bioextract/stats');
+        if (!response.ok) {
+            throw new Error('Failed to fetch stats');
+        }
+        return response.json();
+    },
+
+    /**
+     * 查询递送系统数据
+     */
+    async getDeliverySystems(params?: {
+        paper_id?: string;
+        carrier_type?: string;
+        system_name?: string;
+        keyword?: string;
+        page?: number;
+        page_size?: number;
+    }): Promise<{
+        items: Record<string, unknown>[];
+        total: number;
+        page: number;
+        page_size: number;
+        has_more: boolean;
+    }> {
+        const searchParams = new URLSearchParams();
+        if (params?.paper_id) searchParams.set('paper_id', params.paper_id);
+        if (params?.carrier_type) searchParams.set('carrier_type', params.carrier_type);
+        if (params?.system_name) searchParams.set('system_name', params.system_name);
+        if (params?.keyword) searchParams.set('keyword', params.keyword);
+        if (params?.page) searchParams.set('page', String(params.page));
+        if (params?.page_size) searchParams.set('page_size', String(params.page_size));
+
+        const url = `/api/v1/bioextract/delivery-systems?${searchParams.toString()}`;
+        const response = await fetch(url);
+        if (!response.ok) {
+            throw new Error('Failed to fetch delivery systems');
+        }
+        return response.json();
+    },
+
+    /**
+     * 查询微生物特征数据
+     */
+    async getMicroFeatures(params?: {
+        paper_id?: string;
+        system_type?: string;
+        keyword?: string;
+        page?: number;
+        page_size?: number;
+    }): Promise<{
+        items: Record<string, unknown>[];
+        total: number;
+        page: number;
+        page_size: number;
+        has_more: boolean;
+    }> {
+        const searchParams = new URLSearchParams();
+        if (params?.paper_id) searchParams.set('paper_id', params.paper_id);
+        if (params?.system_type) searchParams.set('system_type', params.system_type);
+        if (params?.keyword) searchParams.set('keyword', params.keyword);
+        if (params?.page) searchParams.set('page', String(params.page));
+        if (params?.page_size) searchParams.set('page_size', String(params.page_size));
+
+        const url = `/api/v1/bioextract/micro-features?${searchParams.toString()}`;
+        const response = await fetch(url);
+        if (!response.ok) {
+            throw new Error('Failed to fetch micro features');
+        }
+        return response.json();
+    },
+
+    /**
+     * 获取论文 Markdown 内容（已去除 base64 图片）
+     */
+    async getPaperMarkdown(paperId: string): Promise<{
+        paper_id: string;
+        markdown_content: string;
+        has_images: boolean;
+        image_count: number;
+        source_url: string | null;
+    }> {
+        const response = await fetch(`/api/v1/bioextract/papers/${encodeURIComponent(paperId)}/markdown`);
+        if (!response.ok) {
+            if (response.status === 404) {
+                throw new Error(`Paper ${paperId} not found`);
+            }
+            throw new Error('Failed to fetch paper markdown');
+        }
+        return response.json();
+    },
+
+    /**
+     * 查询论文标签
+     */
+    async getPaperTags(params?: {
+        paper_id?: string;
+        classification?: string;
+        l1?: string;
+        l2?: string;
+        keyword?: string;
+        page?: number;
+        page_size?: number;
+    }): Promise<{
+        items: Record<string, unknown>[];
+        total: number;
+        page: number;
+        page_size: number;
+        has_more: boolean;
+    }> {
+        const searchParams = new URLSearchParams();
+        if (params?.paper_id) searchParams.set('paper_id', params.paper_id);
+        if (params?.classification) searchParams.set('classification', params.classification);
+        if (params?.l1) searchParams.set('l1', params.l1);
+        if (params?.l2) searchParams.set('l2', params.l2);
+        if (params?.keyword) searchParams.set('keyword', params.keyword);
+        if (params?.page) searchParams.set('page', String(params.page));
+        if (params?.page_size) searchParams.set('page_size', String(params.page_size));
+
+        const url = `/api/v1/bioextract/paper-tags?${searchParams.toString()}`;
+        const response = await fetch(url);
+        if (!response.ok) {
+            throw new Error('Failed to fetch paper tags');
+        }
+        return response.json();
+    },
+
+    /**
+     * 获取载体类型列表（用于筛选器）
+     */
+    async getCarrierTypes(): Promise<{
+        carrier_types: { carrier_type: string; count: number }[];
+    }> {
+        const response = await fetch('/api/v1/bioextract/delivery-systems/carrier-types');
+        if (!response.ok) {
+            throw new Error('Failed to fetch carrier types');
+        }
+        return response.json();
+    },
+
+    /**
+     * 获取微生物系统类型列表（用于筛选器）
+     */
+    async getMicroSystemTypes(): Promise<{
+        system_types: { system_type: string; count: number }[];
+    }> {
+        const response = await fetch('/api/v1/bioextract/micro-features/system-types');
+        if (!response.ok) {
+            throw new Error('Failed to fetch system types');
+        }
+        return response.json();
+    },
+
+    /**
+     * 获取论文分类统计
+     */
+    async getTagClassifications(): Promise<{
+        classifications: { classification: string; count: number }[];
+    }> {
+        const response = await fetch('/api/v1/bioextract/paper-tags/classifications');
+        if (!response.ok) {
+            throw new Error('Failed to fetch classifications');
+        }
+        return response.json();
+    },
+
+    // =============================================
+    // 知识库集成 - 文献和材料 (从后端数据库读取)
+    // =============================================
+
+    /**
+     * 搜索文献 (通过后端知识库 API)
+     */
+    async searchDocuments(params?: {
+        query?: string;
+        knowledgeBaseId?: string;
+        page?: number;
+        pageSize?: number;
+    }): Promise<{
+        documents: Record<string, unknown>[];
+        total: number;
+        page: number;
+        pageSize: number;
+        hasMore: boolean;
+    }> {
+        // 后端 API 是 POST /api/v1/documents/search
+        const url = '/api/v1/documents/search';
+
+        const body = {
+            query: params?.query || '',
+            knowledgeBaseIds: params?.knowledgeBaseId ? [params.knowledgeBaseId] : undefined,
+            page: params?.page || 1,
+            pageSize: params?.pageSize || 20,
+        };
+
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(body),
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to fetch documents');
+        }
+        return response.json();
+    },
+
+    /**
+     * 获取单个文献详情
+     */
+    async getDocument(docId: string): Promise<Record<string, unknown>> {
+        // 后端 API 是 GET /api/v1/documents/{doc_id}
+        const response = await fetch(`/api/v1/documents/${encodeURIComponent(docId)}`);
+        if (!response.ok) {
+            if (response.status === 404) {
+                throw new Error(`Document ${docId} not found`);
+            }
+            throw new Error('Failed to fetch document');
+        }
+        return response.json();
+    },
+
+    /**
+     * 搜索材料 (通过后端知识库 API)
+     */
+    async searchMaterials(params?: {
+        query?: string;
+        category?: string;
+        subcategory?: string;
+        functionalRole?: string;
+        page?: number;
+        pageSize?: number;
+    }): Promise<{
+        materials: Record<string, unknown>[];
+        total: number;
+        page: number;
+        pageSize: number;
+        hasMore: boolean;
+    }> {
+        const searchParams = new URLSearchParams();
+        if (params?.query) searchParams.set('query', params.query);
+        if (params?.category) searchParams.set('category', params.category);
+        if (params?.subcategory) searchParams.set('subcategory', params.subcategory);
+        if (params?.functionalRole) searchParams.set('functional_role', params.functionalRole);
+        if (params?.page) searchParams.set('page', String(params.page));
+        if (params?.pageSize) searchParams.set('page_size', String(params.pageSize));
+
+        // 后端 API 是 GET /api/v1/materials
+        const url = `/api/v1/materials?${searchParams.toString()}`;
+        const response = await fetch(url);
+        if (!response.ok) {
+            throw new Error('Failed to fetch materials');
+        }
+        return response.json();
+    },
+
+    /**
+     * 获取单个材料详情
+     */
+    async getMaterial(materialId: string): Promise<Record<string, unknown>> {
+        // 后端 API 是 GET /api/v1/materials/{material_id}
+        const response = await fetch(`/api/v1/materials/${encodeURIComponent(materialId)}`);
+        if (!response.ok) {
+            if (response.status === 404) {
+                throw new Error(`Material ${materialId} not found`);
+            }
+            throw new Error('Failed to fetch material');
+        }
+        return response.json();
+    },
+
+    /**
+     * 获取知识库统计 (文献 + 材料)
+     */
+    async getKnowledgeStats(): Promise<{
+        totalDocuments: number;
+        totalMaterials: number;
+        categories: { name: string; count: number }[];
+    }> {
+        // 后端 API 是 GET /api/v1/stats
+        const response = await fetch('/api/v1/stats');
+        if (!response.ok) {
+            throw new Error('Failed to fetch knowledge stats');
+        }
+        return response.json();
     },
 };
 

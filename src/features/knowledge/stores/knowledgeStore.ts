@@ -47,7 +47,17 @@ interface KnowledgeState {
     setAPIConfig: (config: Partial<KnowledgeAPIConfig>) => void;
 
     // 材料操作
-    loadMaterials: (params: { query: string; categoryId?: string }) => Promise<void>;
+    materialsTotal: number;
+    loadMaterials: (params: {
+        query: string;
+        category?: string;
+        subcategory?: string;
+        hasPaper?: boolean;
+        sortBy?: string;
+        sortOrder?: string;
+        page?: number;
+        pageSize?: number;
+    }) => Promise<void>;
     selectMaterial: (mat: Material | null) => void;
 
     // 模板操作
@@ -62,6 +72,9 @@ interface KnowledgeState {
     setViewMode: (mode: 'list' | 'grid') => void;
     checkAPIConnection: () => Promise<boolean>;
     fetchDocuments: (kbId: string) => Promise<void>;
+
+    // API 配置状态
+    apiConfig: KnowledgeAPIConfig | null;
 }
 
 export const useKnowledgeStore = create<KnowledgeState>((set, get) => ({
@@ -80,6 +93,7 @@ export const useKnowledgeStore = create<KnowledgeState>((set, get) => ({
     isLoadingDocument: false,
 
     materials: [],
+    materialsTotal: 0,
     isLoadingMaterials: false,
     selectedMaterial: null,
 
@@ -93,6 +107,9 @@ export const useKnowledgeStore = create<KnowledgeState>((set, get) => ({
     // UI State Initial Values
     categories: [],
     viewMode: 'list',
+
+    // API 配置初始值
+    apiConfig: null,
 
     // Actions
     loadKnowledgeBases: async () => {
@@ -135,7 +152,10 @@ export const useKnowledgeStore = create<KnowledgeState>((set, get) => ({
             const response = await fetch('/api/v1/documents/search', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(params),
+                body: JSON.stringify({
+                    ...params,
+                    pageSize: params.pageSize || 50  // Default to 50 items
+                }),
             });
 
             if (response.ok) {
@@ -261,18 +281,32 @@ export const useKnowledgeStore = create<KnowledgeState>((set, get) => ({
     },
 
     // 材料操作
+    // 材料操作
     loadMaterials: async (params) => {
         set({ isLoadingMaterials: true, lastError: null });
         try {
-            const response = await mockKnowledgeAPI.getMaterials(params);
+            // 使用真实 API
+            const response = await knowledgeAPI.getMaterials({
+                query: params.query,
+                category: params.category,
+                subcategory: params.subcategory,
+                hasPaper: params.hasPaper,
+                sortBy: params.sortBy || 'name',
+                sortOrder: params.sortOrder || 'asc',
+                page: params.page || 1,
+                pageSize: params.pageSize || 20
+            });
+
             if (response.success && response.data) {
                 set({
-                    materials: response.data,
+                    materials: response.data.materials,
+                    materialsTotal: response.data.total,
                     isLoadingMaterials: false,
                 });
             } else {
                 set({
                     materials: [],
+                    materialsTotal: 0,
                     isLoadingMaterials: false,
                     lastError: response.error || '加载材料失败',
                 });
@@ -280,6 +314,7 @@ export const useKnowledgeStore = create<KnowledgeState>((set, get) => ({
         } catch (error) {
             set({
                 materials: [],
+                materialsTotal: 0,
                 isLoadingMaterials: false,
                 lastError: error instanceof Error ? error.message : '加载材料失败',
             });
@@ -323,13 +358,22 @@ export const useKnowledgeStore = create<KnowledgeState>((set, get) => ({
     // New Actions Implementation
     fetchCategories: async () => {
         try {
-            const response = await fetch('/api/v1/categories');
+            // Fetch document categories from real API
+            const response = await fetch('/api/v1/documents-categories');
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
             const data = await response.json();
-            console.log("Real API Data received:", data);
-            set({ categories: data });
+            // Transform to CategoryNode format
+            const categories = data.map((cat: { id: string; name: string; count: number }) => ({
+                id: cat.id,
+                name: cat.name,
+                count: cat.count,
+                type: 'category',
+                children: [],
+                icon: 'FileText'
+            }));
+            set({ categories });
         } catch (error) {
             console.error('Failed to fetch categories:', error);
             set({ categories: [] });

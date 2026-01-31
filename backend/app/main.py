@@ -90,6 +90,9 @@ app.include_router(skills.router, prefix="/api/v1", tags=["Skills Management"])
 from app.api import files
 app.include_router(files.router, prefix="/api/v1", tags=["Files & OCR"])
 
+from app.api import bioextract
+app.include_router(bioextract.router, prefix="/api/v1", tags=["BioExtract-AI"])
+
 @app.get("/")
 async def root():
     return {"message": "Welcome to Biomedical Agent Platform API", "status": "running"}

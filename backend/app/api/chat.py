@@ -39,11 +39,16 @@ async def chat_completions(req: ChatRequest):
         
         # --- DYNAMIC AGENT LOADING ---
         system_prompt = "You are a helpful biomedical expert assistant."
+        model = req.model or "gpt-3.5-turbo"
+        temperature = req.temperature or 0.7
+        
         if req.expertId:
             agent_config = await config_service.get_agent(req.expertId)
             if agent_config:
                 system_prompt = agent_config.systemPrompt
-                # TODO: We could also switch Model/Provider based on agent_config.modelProviderId here
+                # Use agent's model if specified, otherwise use request model
+                if hasattr(agent_config, 'model') and agent_config.model:
+                    model = agent_config.model
             else:
                 system_prompt += f" (Simulating expert ID: {req.expertId})"
         
@@ -53,9 +58,9 @@ async def chat_completions(req: ChatRequest):
         ]
 
         full_response = ""
-        async for chunk in llm_service.stream_chat(messages):
+        async for chunk in llm_service.stream_chat(messages, model=model, temperature=temperature):
              full_response += chunk
-             yield f"data: {json.dumps({'content': chunk, 'conversationId': conversation_id})}\n\n"
+             yield f"data: {json.dumps({'content': chunk, 'conversationId': conversation_id})}\\n\\n"
         
         # 3. Save Assistant Message
         ai_msg = Message(
@@ -65,7 +70,7 @@ async def chat_completions(req: ChatRequest):
         )
         await chat_service.add_message(conversation_id, ai_msg)
         
-        yield "data: [DONE]\n\n"
+        yield "data: [DONE]\\n\\n"
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")
 

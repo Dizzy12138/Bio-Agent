@@ -6,7 +6,7 @@
  */
 
 // Tool category for grouping in UI
-export type MCPToolCategory = 'ocr' | 'database' | 'knowledge' | 'chart' | 'custom';
+export type MCPToolCategory = 'ocr' | 'database' | 'knowledge' | 'chart' | 'bioextract' | 'custom';
 
 // Tool execution parameters
 export interface MCPToolParams {

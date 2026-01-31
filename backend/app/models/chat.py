@@ -21,3 +21,5 @@ class ChatRequest(BaseModel):
     message: str
     conversationId: Optional[str] = None
     expertId: Optional[str] = None
+    model: Optional[str] = "gpt-3.5-turbo"  # Default model
+    temperature: Optional[float] = 0.7

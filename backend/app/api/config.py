@@ -34,6 +34,13 @@ async def get_providers():
                 p.apiKey = "********"
     return providers
 
+# Internal endpoint for BioExtract-AI to get unmasked providers
+# This should only be called from same origin (internal use)
+@router.get("/config/providers/internal", response_model=List[LLMProvider])
+async def get_providers_internal():
+    """Returns providers with unmasked API keys for internal use by agents."""
+    return await config_service.get_all_providers()
+
 @router.post("/config/providers", response_model=LLMProvider)
 async def upsert_provider(provider: LLMProvider):
     # If the user sends a masked key (e.g. from UI update), fetching existing key to preserve it

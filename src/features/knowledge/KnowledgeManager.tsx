@@ -62,13 +62,12 @@ export const KnowledgeManager: React.FC = () => {
     const [selectedItem, setSelectedItem] = useState<Document | Material | PromptTemplate | null>(null);
     const [isAPIConfigOpen, setIsAPIConfigOpen] = useState(false);
 
-    // API 配置持久化
-    const storeSetAPIConfig = useKnowledgeStore(state => state.setAPIConfig);
-
     const [syncStatus, setSyncStatus] = useState<SyncStatus>({
         lastSyncAt: null,
         isSyncing: false,
-        syncProgress: 0
+        syncProgress: 0,
+        syncError: null,
+        pendingCount: 0
     });
 
     useEffect(() => {
@@ -77,8 +76,7 @@ export const KnowledgeManager: React.FC = () => {
         }
         fetchCategories();
         checkAPIConnection();
-        // eslint-disable-next-line react-hooks/exhaustive-deps -- fetchDocuments 依赖于 selectedCategory，已在数组中
-    }, [activeView, selectedCategory, fetchCategories, checkAPIConnection]);
+    }, [activeView, selectedCategory, fetchCategories, checkAPIConnection, fetchDocuments]);
 
     const handleSync = async () => {
         setSyncStatus(prev => ({ ...prev, isSyncing: true, syncProgress: 0 }));
@@ -147,164 +145,110 @@ export const KnowledgeManager: React.FC = () => {
     };
 
     return (
-        <div className="flex h-[calc(100vh-64px)] overflow-hidden bg-gray-50">
-            {/* 左侧侧边栏 - 分类树 */}
-            <aside className="w-64 bg-white border-r border-gray-200 flex flex-col">
-                {/* 视图切换器 */}
-                <div className="p-4 border-b border-gray-100">
-                    <div className="flex bg-gray-100 p-1 rounded-lg">
-                        {(['documents', 'materials', 'templates'] as const).map(view => (
-                            <button
-                                key={view}
-                                className={`flex-1 flex items-center justify-center py-2 rounded-md text-sm font-medium transition-all ${activeView === view
-                                    ? 'bg-white text-blue-600 shadow-sm'
-                                    : 'text-gray-500 hover:text-gray-700'
-                                    }`}
-                                onClick={() => setActiveView(view)}
-                                title={getViewTitle(view)}
-                            >
-                                {getViewIcon(view)}
-                            </button>
-                        ))}
-                    </div>
-                </div>
-
-                <div className="flex-1 overflow-y-auto p-4 scrollbar-thin">
-                    {categories && (
-                        <CategoryTree
-                            categories={categories}
-                            selectedId={selectedCategory}
-                            onSelect={(id) => {
-                                console.log("Selected node id:", id);
-                                setSelectedCategory(id);
-                                if (id) {
-                                    fetchDocuments(id);
-                                }
-                            }}
-                        />
-                    )}
-                </div>
-
-                {/* 底部 API 配置入口 */}
-                <div className="p-4 border-t border-gray-200">
-                    <Button
-                        variant="secondary"
-                        fullWidth={true}
-                        onClick={() => setIsAPIConfigOpen(true)}
-                        className="text-xs"
-                        leftIcon={<Settings size={14} />}
-                    >
-                        知识库连接配置
-                    </Button>
-                </div>
-            </aside>
-
-            {/* 主内容区域 */}
-            <main className="flex-1 flex flex-col p-6 min-w-0 overflow-hidden">
-                <header className="mb-6 flex-shrink-0">
-                    <div className="flex justify-between items-center mb-4">
-                        <div className="flex items-center gap-3">
-                            <div className="p-2 bg-blue-100 text-blue-600 rounded-lg">
-                                {getViewIcon(activeView)}
-                            </div>
-                            <div>
-                                <h1 className="text-xl font-bold text-gray-900">{getViewTitle(activeView)}</h1>
-                                <p className="text-sm text-gray-500">
-                                    {activeView === 'documents' && '管理和检索您的文献资料'}
-                                    {activeView === 'materials' && '查看结构化生物材料特性'}
-                                    {activeView === 'templates' && '管理抽取和分析模版'}
-                                </p>
-                            </div>
-                        </div>
-
-                        <div className="flex items-center gap-3">
-                            {/* 同步状态 */}
-                            <div className="flex items-center gap-2 text-sm text-gray-500 bg-white border border-gray-200 px-3 py-1.5 rounded-full shadow-sm">
-                                <RotateCw
-                                    size={14}
-                                    className={`${syncStatus.isSyncing ? 'animate-spin text-blue-500' : 'text-gray-400'}`}
-                                />
-                                <span>
-                                    {syncStatus.isSyncing
-                                        ? `同步中 ${syncStatus.syncProgress}%`
-                                        : formatSyncTime(syncStatus.lastSyncAt)
-                                    }
-                                </span>
-                                {!syncStatus.isSyncing && (
-                                    <button
-                                        onClick={handleSync}
-                                        className="hover:text-blue-600 transition-colors"
-                                        title="立即同步"
-                                    >
-                                        <RotateCw size={14} />
-                                    </button>
-                                )}
-                            </div>
-
-                            {/* 视图切换 */}
-                            <div className="flex bg-gray-100 rounded-lg p-1 border border-gray-200">
+        <div className="flex flex-col h-[calc(100vh-64px)] overflow-hidden bg-gray-50">
+            {/* 顶部导航区域 */}
+            <header className="bg-white border-b border-gray-200 px-6 py-4 flex-shrink-0">
+                <div className="flex justify-between items-center mb-4">
+                    <div className="flex items-center gap-6">
+                        {/* 页签导航 */}
+                        <div className="flex bg-gray-100 p-1 rounded-lg">
+                            {(['documents', 'materials', 'templates'] as const).map(view => (
                                 <button
-                                    className={`p-1.5 rounded-md transition-all ${viewMode === 'grid' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-400 hover:text-gray-700'}`}
-                                    onClick={() => setViewMode('grid')}
+                                    key={view}
+                                    className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${activeView === view
+                                        ? 'bg-white text-blue-600 shadow-sm'
+                                        : 'text-gray-500 hover:text-gray-700'
+                                        }`}
+                                    onClick={() => setActiveView(view)}
                                 >
-                                    <Grid size={16} />
+                                    {getViewIcon(view)}
+                                    <span>{getViewTitle(view)}</span>
                                 </button>
-                                <button
-                                    className={`p-1.5 rounded-md transition-all ${viewMode === 'list' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-400 hover:text-gray-700'}`}
-                                    onClick={() => setViewMode('list')}
-                                >
-                                    <List size={16} />
-                                </button>
-                            </div>
-
-                            {/* 操作按钮 */}
-                            {activeView === 'documents' && (
-                                <Button leftIcon={<Upload size={16} />}>
-                                    上传文献
-                                </Button>
-                            )}
-                            {activeView === 'templates' && (
-                                <Button leftIcon={<Plus size={16} />}>
-                                    新建模板
-                                </Button>
-                            )}
+                            ))}
                         </div>
                     </div>
 
-                    {/* 搜索和筛选 */}
-                    <div className="flex flex-col gap-2">
-                        <div className="relative">
-                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-                                <Search size={16} />
-                            </div>
-                            <input
-                                type="text"
-                                className="pl-9 pr-4 py-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none bg-white transition-all shadow-sm text-sm"
-                                placeholder={`搜索${getViewTitle(activeView)}...`}
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
+                    <div className="flex items-center gap-3">
+                        {/* 同步状态 */}
+                        <div className="flex items-center gap-2 text-sm text-gray-500 bg-gray-50 border border-gray-200 px-3 py-1.5 rounded-full">
+                            <RotateCw
+                                size={14}
+                                className={`${syncStatus.isSyncing ? 'animate-spin text-blue-500' : 'text-gray-400'}`}
                             />
+                            <span>
+                                {syncStatus.isSyncing
+                                    ? `同步中 ${syncStatus.syncProgress}%`
+                                    : formatSyncTime(syncStatus.lastSyncAt)
+                                }
+                            </span>
+                            {!syncStatus.isSyncing && (
+                                <button
+                                    onClick={handleSync}
+                                    className="hover:text-blue-600 transition-colors"
+                                    title="立即同步"
+                                >
+                                    <RotateCw size={14} />
+                                </button>
+                            )}
                         </div>
 
-                        {selectedCategory && (
-                            <div className="flex items-center gap-2">
-                                <span className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-xs font-medium border border-blue-100 animate-in fade-in zoom-in duration-200">
-                                    分类: {categories
-                                        .flatMap((c: { children?: Array<{ id: string; name: string }> }) => c.children || [])
-                                        .find((c: { id: string; name: string }) => c.id === selectedCategory)?.name || selectedCategory}
-                                    <button
-                                        onClick={() => setSelectedCategory(null)}
-                                        className="hover:bg-blue-200 rounded-full p-0.5 ml-1 transition-colors"
-                                    >
-                                        <X size={12} />
-                                    </button>
-                                </span>
-                            </div>
-                        )}
-                    </div>
-                </header>
+                        {/* 视图切换 */}
+                        <div className="flex bg-gray-100 rounded-lg p-1 border border-gray-200">
+                            <button
+                                className={`p-1.5 rounded-md transition-all ${viewMode === 'grid' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-400 hover:text-gray-700'}`}
+                                onClick={() => setViewMode('grid')}
+                            >
+                                <Grid size={16} />
+                            </button>
+                            <button
+                                className={`p-1.5 rounded-md transition-all ${viewMode === 'list' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-400 hover:text-gray-700'}`}
+                                onClick={() => setViewMode('list')}
+                            >
+                                <List size={16} />
+                            </button>
+                        </div>
 
-                <div className="flex-1 overflow-y-auto min-h-0 bg-white rounded-xl border border-gray-200 shadow-sm relative">
+                        {/* 操作按钮 */}
+                        {activeView === 'documents' && (
+                            <Button leftIcon={<Upload size={16} />}>
+                                上传文献
+                            </Button>
+                        )}
+                        {activeView === 'templates' && (
+                            <Button leftIcon={<Plus size={16} />}>
+                                新建模板
+                            </Button>
+                        )}
+
+                        {/* 设置按钮 */}
+                        <Button
+                            variant="secondary"
+                            onClick={() => setIsAPIConfigOpen(true)}
+                            leftIcon={<Settings size={16} />}
+                        >
+                            配置
+                        </Button>
+                    </div>
+                </div>
+
+                {/* 搜索栏 */}
+                <div className="relative max-w-xl">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                        <Search size={16} />
+                    </div>
+                    <input
+                        type="text"
+                        className="pl-9 pr-4 py-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none bg-white transition-all shadow-sm text-sm"
+                        placeholder={`搜索${getViewTitle(activeView)}...`}
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                </div>
+            </header>
+
+            {/* 主内容区域 - 全宽 */}
+            <main className="flex-1 p-6 min-w-0 overflow-hidden">
+                <div className="h-full overflow-y-auto bg-white rounded-xl border border-gray-200 shadow-sm">
                     {renderContent()}
                 </div>
             </main>
@@ -322,7 +266,6 @@ export const KnowledgeManager: React.FC = () => {
                 onClose={() => setIsAPIConfigOpen(false)}
                 onSave={(config) => {
                     setAPIConfig(config);
-                    storeSetAPIConfig(config);
                 }}
                 currentConfig={apiConfig || undefined}
             />
