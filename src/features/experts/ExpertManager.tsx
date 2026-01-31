@@ -8,6 +8,7 @@ import { ExportImportModal } from './components/ExportImportModal';
 import type { Expert } from './types';
 import { Plus, Users } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import './ExpertManager.css';
 
 // Mock 专家数据
 const mockExperts: Expert[] = [
