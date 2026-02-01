@@ -21,6 +21,47 @@ export const AGENT_CONFIG = {
     sqlTimeout: 10000,             // SQL 执行超时 (ms)
 };
 
+const BIOEXTRACT_TOOL_SCHEMAS = [
+    {
+        name: 'query_micro_features',
+        description: '查询 BioExtract 微生物特征数据，支持按论文、系统类型、关键词及分页条件过滤。',
+        parameters: {
+            type: 'object',
+            properties: {
+                paper_id: { type: 'string', description: '论文 ID' },
+                system_type: { type: 'string', description: '系统类型' },
+                keyword: { type: 'string', description: '关键词（如供氧、代谢、菌种）' },
+                page: { type: 'number', minimum: 1, description: '页码' },
+                page_size: { type: 'number', minimum: 1, description: '每页数量' },
+            },
+            required: [],
+        },
+    },
+    {
+        name: 'query_delivery_systems',
+        description: '查询 BioExtract 递送系统数据，支持按论文、载体类型、系统名称、关键词及分页条件过滤。',
+        parameters: {
+            type: 'object',
+            properties: {
+                paper_id: { type: 'string', description: '论文 ID' },
+                carrier_type: { type: 'string', description: '载体类型' },
+                system_name: { type: 'string', description: '系统名称' },
+                keyword: { type: 'string', description: '关键词（如供氧、缓释、包埋）' },
+                page: { type: 'number', minimum: 1, description: '页码' },
+                page_size: { type: 'number', minimum: 1, description: '每页数量' },
+            },
+            required: [],
+        },
+    },
+];
+
+function formatToolSchemas(): string {
+    const schemaText = BIOEXTRACT_TOOL_SCHEMAS
+        .map(schema => `### ${schema.name}\n${schema.description}\n\`\`\`json\n${JSON.stringify(schema, null, 2)}\n\`\`\``)
+        .join('\n\n');
+    return schemaText ? `\n\n## 工具参数 Schema\n${schemaText}` : '';
+}
+
 // =============================================
 // 类型定义
 // =============================================
@@ -85,7 +126,8 @@ function getSystemPrompt(): string {
     const basePrompt = getAgentPrompt('system-bioextract-agent') || BIOEXTRACT_SYSTEM_PROMPT;
     // 动态附加工具描述
     const toolDesc = generateToolDescriptions();
-    return basePrompt + toolDesc;
+    const toolSchemas = formatToolSchemas();
+    return basePrompt + toolDesc + toolSchemas;
 }
 
 // =============================================

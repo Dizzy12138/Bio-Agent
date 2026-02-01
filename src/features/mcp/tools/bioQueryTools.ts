@@ -34,9 +34,21 @@ export async function executeQueryDeliverySystemsTool(
 
     try {
         const data = await bioextractAPI.getDeliverySystems(input);
+        if (!data || data.total === 0 || (Array.isArray(data.items) && data.items.length === 0)) {
+            return {
+                success: true,
+                output: '未找到符合条件的递送系统记录。请尝试更换关键词。',
+            };
+        }
+        const conciseItems = data.items.map((item: Record<string, any>) => ({
+            name: item.name,
+            type: item.subcategory,
+            description: item.raw_data?.description || item.functional_performance?.functionality_notes || 'N/A',
+            paper_id: item.paper_id,
+        }));
         return {
             success: true,
-            output: data,
+            output: conciseItems,
         };
     } catch (e) {
         return {
@@ -57,9 +69,21 @@ export async function executeQueryMicroFeaturesTool(
 
     try {
         const data = await bioextractAPI.getMicroFeatures(input);
+        if (!data || data.total === 0 || (Array.isArray(data.items) && data.items.length === 0)) {
+            return {
+                success: true,
+                output: '未找到符合条件的微生物记录。请尝试更换关键词。',
+            };
+        }
+        const conciseItems = data.items.map((item: Record<string, any>) => ({
+            name: item.name,
+            type: item.subcategory,
+            function: item.functional_performance?.functionality_notes || item.raw_data?.description || 'N/A',
+            paper_id: item.paper_id,
+        }));
         return {
             success: true,
-            output: data,
+            output: conciseItems,
         };
     } catch (e) {
         return {

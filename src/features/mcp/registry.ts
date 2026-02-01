@@ -94,7 +94,7 @@ export const SYSTEM_MCP_TOOLS: MCPTool[] = [
     {
         id: 'query_micro_features',
         name: '查询微生物特征',
-        description: '查询 BioExtract 微生物特征数据，支持按论文、系统类型、关键词及分页条件过滤。',
+        description: '查询微生物特征。必需参数: "keyword" (功能词或名称)。可选参数: "system_type", "paper_id"。示例: {"keyword": "oxygen", "system_type": "bacterium"}',
         icon: '🧫',
         category: 'bioextract',
         enabled: true,
@@ -105,7 +105,7 @@ export const SYSTEM_MCP_TOOLS: MCPTool[] = [
     {
         id: 'query_delivery_systems',
         name: '查询递送系统',
-        description: '查询 BioExtract 递送系统数据，支持按论文、载体类型、系统名称、关键词及分页条件过滤。',
+        description: '查询递送系统。必需参数: "keyword" (载体特征或名称)。可选参数: "carrier_type", "paper_id"。示例: {"keyword": "nanoparticle", "carrier_type": "lipid"}',
         icon: '🚚',
         category: 'bioextract',
         enabled: true,
