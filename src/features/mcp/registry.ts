@@ -92,6 +92,28 @@ export const SYSTEM_MCP_TOOLS: MCPTool[] = [
         config: {},
     },
     {
+        id: 'query_micro_features',
+        name: '查询微生物特征',
+        description: '查询 BioExtract 微生物特征数据，支持按论文、系统类型、关键词及分页条件过滤。',
+        icon: '🧫',
+        category: 'bioextract',
+        enabled: true,
+        isSystem: true,
+        configSchema: [],
+        config: {},
+    },
+    {
+        id: 'query_delivery_systems',
+        name: '查询递送系统',
+        description: '查询 BioExtract 递送系统数据，支持按论文、载体类型、系统名称、关键词及分页条件过滤。',
+        icon: '🚚',
+        category: 'bioextract',
+        enabled: true,
+        isSystem: true,
+        configSchema: [],
+        config: {},
+    },
+    {
         id: 'mcp-chart',
         name: '图表生成',
         description: '根据数据生成可视化图表',
@@ -305,6 +327,18 @@ export async function executeTool(toolId: string, params: MCPToolParams): Promis
                 const { bioextractAPI } = await import('../bioextract/api/backendAPI');
                 const data = await bioextractAPI.getStats();
                 result = { success: true, output: data };
+                break;
+            }
+
+            case 'query_micro_features': {
+                const { executeQueryMicroFeaturesTool } = await import('./tools/bioQueryTools');
+                result = await executeQueryMicroFeaturesTool(params);
+                break;
+            }
+
+            case 'query_delivery_systems': {
+                const { executeQueryDeliverySystemsTool } = await import('./tools/bioQueryTools');
+                result = await executeQueryDeliverySystemsTool(params);
                 break;
             }
 
