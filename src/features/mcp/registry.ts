@@ -94,7 +94,7 @@ export const SYSTEM_MCP_TOOLS: MCPTool[] = [
     {
         id: 'query_micro_features',
         name: '查询微生物特征',
-        description: '查询微生物特征。必需参数: "keyword" (功能词或名称)。可选参数: "system_type", "paper_id"。示例: {"keyword": "oxygen", "system_type": "bacterium"}',
+        description: '查询微生物特征。必需参数: "keyword" (功能词或名称，如 "oxygen", "供氧")。可选参数: "system_type", "paper_id"。示例: {"keyword": "oxygen"}',
         icon: '🧫',
         category: 'bioextract',
         enabled: true,
@@ -105,7 +105,7 @@ export const SYSTEM_MCP_TOOLS: MCPTool[] = [
     {
         id: 'query_delivery_systems',
         name: '查询递送系统',
-        description: '查询递送系统。必需参数: "keyword" (载体特征或名称)。可选参数: "carrier_type", "paper_id"。示例: {"keyword": "nanoparticle", "carrier_type": "lipid"}',
+        description: '查询递送系统。必需参数: "keyword" (载体特征或名称，如 "nanoparticle")。可选参数: "carrier_type", "paper_id"。示例: {"keyword": "nanoparticle"}',
         icon: '🚚',
         category: 'bioextract',
         enabled: true,
