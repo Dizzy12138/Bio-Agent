@@ -37,7 +37,7 @@ export async function executeQueryDeliverySystemsTool(
         if (!data || data.total === 0 || (Array.isArray(data.items) && data.items.length === 0)) {
             return {
                 success: true,
-                output: '未找到符合条件的递送系统记录。请尝试更换关键词。',
+                output: '未找到符合条件的递送系统记录。请尝试更换关键词（例如使用更通用的术语）。',
             };
         }
         const conciseItems = data.items.map((item: Record<string, any>) => ({
@@ -72,13 +72,14 @@ export async function executeQueryMicroFeaturesTool(
         if (!data || data.total === 0 || (Array.isArray(data.items) && data.items.length === 0)) {
             return {
                 success: true,
-                output: '未找到符合条件的微生物记录。请尝试更换关键词。',
+                output: "未找到符合条件的微生物记录。请尝试更换关键词（例如 'oxygen', 'photosynthesis'）。",
             };
         }
         const conciseItems = data.items.map((item: Record<string, any>) => ({
             name: item.name,
             type: item.subcategory,
             function: item.functional_performance?.functionality_notes || item.raw_data?.description || 'N/A',
+            growth_notes: item.raw_data?.chassis_and_growth?.growth_conditions?.oxygen_notes || 'N/A',
             paper_id: item.paper_id,
         }));
         return {
