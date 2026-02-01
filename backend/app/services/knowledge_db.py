@@ -139,7 +139,12 @@ class KnowledgeService:
 
     async def get_document_by_id(self, doc_id: str) -> Optional[Dict]:
         """获取单个文献详情"""
-        doc = await self.documents_collection.find_one({"id": doc_id})
+        doc = await self.documents_collection.find_one({
+            "$or": [
+                {"id": doc_id},
+                {"paper_id": doc_id},
+            ]
+        })
         if doc:
             doc.pop("_id", None)
             return doc
@@ -151,7 +156,8 @@ class KnowledgeService:
         用于左侧分类树显示
         """
         pipeline = [
-            {"$group": {"_id": "$source", "count": {"$sum": 1}}},
+            {"$addFields": {"source_name": {"$ifNull": ["$journal", "$source"]}}},
+            {"$group": {"_id": "$source_name", "count": {"$sum": 1}}},
             {"$sort": {"count": -1}},
             {"$limit": 20}  # 只取前20个期刊
         ]
@@ -173,8 +179,10 @@ class KnowledgeService:
         # 按年份统计
         year_pipeline = [
             {"$addFields": {
-                "year": {"$substr": ["$publishDate", 0, 4]}
+                "year": {"$ifNull": ["$publish_year", {"$substr": ["$publishDate", 0, 4]}]}
             }},
+            {"$match": {"year": {"$ne": None, "$ne": ""}}},
+            {"$addFields": {"year": {"$toString": "$year"}}},
             {"$group": {"_id": "$year", "count": {"$sum": 1}}},
             {"$sort": {"_id": -1}},
             {"$limit": 10}
@@ -207,11 +215,11 @@ class KnowledgeService:
         查询材料列表，支持按名称搜索、分类筛选和排序
         返回格式与前端 Material 接口兼容
         """
-        filter_query = {}
+        conditions: List[Dict[str, Any]] = []
         
         # 文本搜索（扩展到更多字段，支持功能性关键词反查）
         if query:
-            filter_query["$or"] = [
+            conditions.append({"$or": [
                 # 基础字段
                 {"name": {"$regex": query, "$options": "i"}},
                 {"id": {"$regex": query, "$options": "i"}},
@@ -228,23 +236,44 @@ class KnowledgeService:
                 {"raw_data.effector_modules.output_control.mechanism_of_action": {"$regex": query, "$options": "i"}},
                 {"raw_data.identity.genus": {"$regex": query, "$options": "i"}},
                 {"raw_data.identity.species": {"$regex": query, "$options": "i"}},
-            ]
+            ]})
         
         # 分类筛选
         if category:
-            filter_query["category"] = category
+            conditions.append({"category": category})
         if subcategory:
-            filter_query["subcategory"] = subcategory
+            conditions.append({"subcategory": subcategory})
         
         # 关联文献筛选
         if has_paper is True:
-            filter_query["paper_id"] = {"$exists": True, "$ne": None, "$ne": ""}
+            conditions.append({
+                "$or": [
+                    {"paper_ids": {"$exists": True, "$ne": []}},
+                    {"paper_id": {"$exists": True, "$ne": None, "$ne": ""}},
+                ]
+            })
         elif has_paper is False:
-            filter_query["$or"] = [
-                {"paper_id": {"$exists": False}},
-                {"paper_id": None},
-                {"paper_id": ""}
-            ]
+            conditions.append({
+                "$and": [
+                    {"$or": [
+                        {"paper_ids": {"$exists": False}},
+                        {"paper_ids": []},
+                        {"paper_ids": None},
+                    ]},
+                    {"$or": [
+                        {"paper_id": {"$exists": False}},
+                        {"paper_id": None},
+                        {"paper_id": ""},
+                    ]},
+                ]
+            })
+        
+        if not conditions:
+            filter_query: Dict[str, Any] = {}
+        elif len(conditions) == 1:
+            filter_query = conditions[0]
+        else:
+            filter_query = {"$and": conditions}
         
         # 计算总数
         total = await self.materials_collection.count_documents(filter_query)
@@ -409,4 +438,3 @@ class KnowledgeService:
         }
 
 knowledge_service = KnowledgeService()
-
