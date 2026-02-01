@@ -99,7 +99,7 @@ async def get_knowledge_stats():
     
     return {
         "totalDocuments": doc_stats.get("total", 0),
-        "totalMaterials": mat_stats.get("total", 0),
+        "totalMaterials": mat_stats.get("totalMaterials", mat_stats.get("total", 0)),
         "categories": mat_stats.get("categories", []),
         "documentStats": doc_stats,
         "materialStats": mat_stats,

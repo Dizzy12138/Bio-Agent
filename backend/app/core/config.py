@@ -1,3 +1,4 @@
+from typing import Optional
 from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
@@ -18,12 +19,12 @@ class Settings(BaseSettings):
     POSTGRES_URL: str = "postgresql://user:password@localhost:5432/biomedical"
 
     # LLM Keys
-    OPENAI_API_KEY: str | None = None
-    ANTHROPIC_API_KEY: str | None = None
-    GEMINI_API_KEY: str | None = None
+    OPENAI_API_KEY: Optional[str] = None
+    ANTHROPIC_API_KEY: Optional[str] = None
+    GEMINI_API_KEY: Optional[str] = None
 
     # External Paper API (for import_documents.py)
-    PAPER_API_TOKEN: str | None = None
+    PAPER_API_TOKEN: Optional[str] = None
 
     class Config:
         env_file = ".env"

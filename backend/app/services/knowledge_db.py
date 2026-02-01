@@ -119,7 +119,7 @@ class KnowledgeService:
             documents.append({
                 "id": doc.get("paper_id", ""),
                 "title": doc.get("title", ""),
-                "authors": doc.get("authors", "").split(", ") if doc.get("authors") else [],
+                "authors": doc.get("authors", "").split("; ") if doc.get("authors") else [],
                 "source": doc.get("journal", ""),
                 "publishDate": str(doc.get("publish_year", "")),
                 "type": "paper",
@@ -138,16 +138,23 @@ class KnowledgeService:
         }
 
     async def get_document_by_id(self, doc_id: str) -> Optional[Dict]:
-        """获取单个文献详情"""
-        doc = await self.documents_collection.find_one({
-            "$or": [
-                {"id": doc_id},
-                {"paper_id": doc_id},
-            ]
-        })
+        """获取单个文献详情（与 search_documents 返回单条格式一致：id/title/authors 数组/source/publishDate）"""
+        doc = await self.documents_collection.find_one({"$or": [{"id": doc_id}, {"paper_id": doc_id}]})
         if doc:
             doc.pop("_id", None)
-            return doc
+            # 与列表项格式一致，便于文献资料库详情页使用
+            return {
+                "id": doc.get("paper_id", doc.get("id", "")),
+                "title": doc.get("title", ""),
+                "authors": doc.get("authors", "").split("; ") if isinstance(doc.get("authors"), str) else (doc.get("authors") or []),
+                "source": doc.get("journal", doc.get("source", "")),
+                "publishDate": str(doc.get("publish_year", doc.get("publishDate", ""))),
+                "type": "paper",
+                "knowledgeBaseId": (doc.get("source_tables") or [""])[0],
+                "status": "indexed",
+                "markdown_url": doc.get("markdown_url"),
+                "has_markdown": doc.get("has_markdown", False),
+            }
         return None
 
     async def get_document_categories(self) -> List[Dict[str, Any]]:

@@ -401,6 +401,9 @@ export const BIOEXTRACT_SYSTEM_PROMPT = `你是 BioExtract-AI Agent，专门用�
 **查找微生物相关材料：**
 调用 search-materials，参数 {"category": "microbe", "limit": 10}
 
+**按功能/生长条件查微生物（如能供氧、需氧、通气等）：**
+调用 search-materials，参数 {"category": "microbe", "query": "氧", "limit": 10}。用户问「能供氧的微生物」时务必用 query "氧" 或 "供氧" 检索；数据库会匹配生长条件描述（oxygen_notes 等）。若 query "供氧" 无结果，可再试 query "氧"。
+
 **获取数据库统计：**
 调用 get-bioextract-stats，无参数
 

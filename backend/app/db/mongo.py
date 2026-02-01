@@ -6,7 +6,10 @@ class MongoDB:
     db = None
 
     def connect(self):
-        self.client = AsyncIOMotorClient(settings.MONGODB_URL)
+        self.client = AsyncIOMotorClient(
+            settings.MONGODB_URL,
+            serverSelectionTimeoutMS=5000,
+        )
         self.db = self.client[settings.MONGODB_DB_NAME]
         print("Connected to MongoDB")
 
