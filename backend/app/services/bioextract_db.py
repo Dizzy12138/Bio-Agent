@@ -139,20 +139,24 @@ class BioExtractService:
         
         支持按 paper_id、关键词筛选
         """
-        # 基础筛选：只查 delivery_system 类别
-        query: Dict[str, Any] = {"category": "delivery_system"}
+        conditions: List[Dict[str, Any]] = [{"category": "delivery_system"}]
         
-        # 按 paper_id 筛选 (现在是数组字段 paper_ids)
+        # 按 paper_id 筛选 (兼容 paper_id 与 paper_ids)
         if params.paper_id:
-            query["paper_ids"] = params.paper_id
+            conditions.append({
+                "$or": [
+                    {"paper_ids": params.paper_id},
+                    {"paper_id": params.paper_id},
+                ]
+            })
         
         # 按子分类筛选 (替代旧的 carrier_type)
         if params.carrier_type:
-            query["subcategory"] = {"$regex": params.carrier_type, "$options": "i"}
+            conditions.append({"subcategory": {"$regex": params.carrier_type, "$options": "i"}})
         
         # 按名称筛选 (替代旧的 system_name)
         if params.system_name:
-            query["name"] = {"$regex": params.system_name, "$options": "i"}
+            conditions.append({"name": {"$regex": params.system_name, "$options": "i"}})
         
         # 全文搜索（搜索多个字段）
         if params.keyword:
@@ -161,12 +165,15 @@ class BioExtractService:
                 {"name": keyword_regex},
                 {"subcategory": keyword_regex},
                 {"paper_titles": keyword_regex},
+                {"paper_title": keyword_regex},
             ]
-            if "$or" not in query:
-                query["$and"] = [{"category": "delivery_system"}, {"$or": keyword_query}]
-                query.pop("category")
-            else:
-                query["$or"].extend(keyword_query)
+            conditions.append({"$or": keyword_query})
+        
+        query: Dict[str, Any]
+        if len(conditions) == 1:
+            query = conditions[0]
+        else:
+            query = {"$and": conditions}
         
         # 计算总数
         total = await self.delivery_collection.count_documents(query)
@@ -191,7 +198,10 @@ class BioExtractService:
         """获取指定论文的所有递送系统 (使用新的 paper_ids 数组字段)"""
         cursor = self.delivery_collection.find({
             "category": "delivery_system",
-            "paper_ids": paper_id
+            "$or": [
+                {"paper_ids": paper_id},
+                {"paper_id": paper_id},
+            ]
         })
         results = []
         async for doc in cursor:
@@ -212,16 +222,20 @@ class BioExtractService:
         
         支持按 paper_id、subcategory 筛选，以及关键词搜索
         """
-        # 基础筛选：只查 microbe 类别
-        query: Dict[str, Any] = {"category": "microbe"}
+        conditions: List[Dict[str, Any]] = [{"category": "microbe"}]
         
-        # 按 paper_id 筛选 (使用 paper_ids 数组)
+        # 按 paper_id 筛选 (兼容 paper_id 与 paper_ids)
         if params.paper_id:
-            query["paper_ids"] = params.paper_id
+            conditions.append({
+                "$or": [
+                    {"paper_ids": params.paper_id},
+                    {"paper_id": params.paper_id},
+                ]
+            })
         
         # 按子分类筛选 (替代旧的 system_type)
         if params.system_type:
-            query["subcategory"] = {"$regex": params.system_type, "$options": "i"}
+            conditions.append({"subcategory": {"$regex": params.system_type, "$options": "i"}})
         
         # 全文搜索
         if params.keyword:
@@ -230,9 +244,15 @@ class BioExtractService:
                 {"name": keyword_regex},
                 {"subcategory": keyword_regex},
                 {"paper_titles": keyword_regex},
+                {"paper_title": keyword_regex},
             ]
-            query["$and"] = [{"category": "microbe"}, {"$or": keyword_query}]
-            query.pop("category")
+            conditions.append({"$or": keyword_query})
+        
+        query: Dict[str, Any]
+        if len(conditions) == 1:
+            query = conditions[0]
+        else:
+            query = {"$and": conditions}
         
         total = await self.micro_collection.count_documents(query)
         
@@ -256,7 +276,10 @@ class BioExtractService:
         """获取指定论文的所有微生物特征 (使用新的 paper_ids 数组字段)"""
         cursor = self.micro_collection.find({
             "category": "microbe",
-            "paper_ids": paper_id
+            "$or": [
+                {"paper_ids": paper_id},
+                {"paper_id": paper_id},
+            ]
         })
         results = []
         async for doc in cursor:
@@ -375,8 +398,8 @@ class BioExtractService:
     
     async def get_stats(self) -> BioExtractStats:
         """获取 BioExtract 数据统计"""
-        delivery_count = await self.delivery_collection.count_documents({})
-        micro_count = await self.micro_collection.count_documents({})
+        delivery_count = await self.delivery_collection.count_documents({"category": "delivery_system"})
+        micro_count = await self.micro_collection.count_documents({"category": "microbe"})
         tags_count = await self.tags_collection.count_documents({})
         atps_count = await self.atps_collection.count_documents({})
         
@@ -395,8 +418,8 @@ class BioExtractService:
     async def get_delivery_carrier_types(self) -> List[Dict[str, Any]]:
         """获取所有载体类型及其计数"""
         pipeline = [
-            {"$match": {"carrier_type": {"$ne": None, "$ne": ""}}},
-            {"$group": {"_id": "$carrier_type", "count": {"$sum": 1}}},
+            {"$match": {"category": "delivery_system", "subcategory": {"$ne": None, "$ne": ""}}},
+            {"$group": {"_id": "$subcategory", "count": {"$sum": 1}}},
             {"$sort": {"count": -1}},
             {"$limit": 50}
         ]
@@ -409,8 +432,8 @@ class BioExtractService:
     async def get_micro_system_types(self) -> List[Dict[str, Any]]:
         """获取所有微生物系统类型及其计数"""
         pipeline = [
-            {"$match": {"system_type": {"$ne": None, "$ne": ""}}},
-            {"$group": {"_id": "$system_type", "count": {"$sum": 1}}},
+            {"$match": {"category": "microbe", "subcategory": {"$ne": None, "$ne": ""}}},
+            {"$group": {"_id": "$subcategory", "count": {"$sum": 1}}},
             {"$sort": {"count": -1}},
             {"$limit": 50}
         ]
