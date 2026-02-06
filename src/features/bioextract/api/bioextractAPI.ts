@@ -14,6 +14,18 @@ import type {
     FunctionalTagType,
 } from '../types';
 
+// Helper function to get Authorization headers
+function getAuthHeaders(): HeadersInit {
+    const token = localStorage.getItem('access_token');
+    const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+    };
+    if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+    }
+    return headers;
+}
+
 // =============================================
 // Mock ATPS 数据库 (示例数据)
 // =============================================
@@ -666,6 +678,127 @@ export const bioextractAPI = {
             throw new Error('Failed to fetch knowledge stats');
         }
         return response.json();
+    },
+
+    // =============================================
+    // 对话管理 API
+    // =============================================
+
+    /**
+     * 创建新对话
+     */
+    async createConversation(params?: {
+        title?: string;
+        model?: string;
+        expert_id?: string;
+        expert_name?: string;
+    }): Promise<{
+        id: string;
+        title: string;
+        created_at: string;
+        updated_at: string;
+    }> {
+        const response = await fetch('/api/v1/chat/conversations', {
+            method: 'POST',
+            headers: getAuthHeaders(),
+            body: JSON.stringify({
+                title: params?.title || '新对话',
+                model: params?.model,
+                expert_id: params?.expert_id,
+                expert_name: params?.expert_name,
+            }),
+        });
+
+        if (!response.ok) {
+            const error = await response.text();
+            throw new Error(`创建对话失败: ${error}`);
+        }
+
+        return response.json();
+    },
+
+    /**
+     * 获取对话列表
+     */
+    async getConversations(params?: {
+        limit?: number;
+        skip?: number;
+        include_archived?: boolean;
+    }): Promise<Array<{
+        id: string;
+        title: string;
+        created_at: string;
+        updated_at: string;
+    }>> {
+        const searchParams = new URLSearchParams();
+        if (params?.limit) searchParams.set('limit', String(params.limit));
+        if (params?.skip) searchParams.set('skip', String(params.skip));
+        if (params?.include_archived) searchParams.set('include_archived', 'true');
+
+        const url = `/api/v1/chat/conversations?${searchParams.toString()}`;
+        const response = await fetch(url, {
+            headers: getAuthHeaders(),
+        });
+
+        if (!response.ok) {
+            throw new Error('获取对话列表失败');
+        }
+
+        return response.json();
+    },
+
+    /**
+     * 获取对话历史消息
+     */
+    async getConversationHistory(conversationId: string): Promise<Array<{
+        id: string;
+        role: string;
+        content: string;
+        timestamp: string;
+    }>> {
+        const response = await fetch(`/api/v1/chat/conversations/${encodeURIComponent(conversationId)}/messages`, {
+            headers: getAuthHeaders(),
+        });
+
+        if (!response.ok) {
+            if (response.status === 404) {
+                throw new Error('对话不存在');
+            }
+            throw new Error('获取对话历史失败');
+        }
+
+        return response.json();
+    },
+
+    /**
+     * 更新对话标题
+     */
+    async updateConversation(conversationId: string, params: {
+        title?: string;
+    }): Promise<void> {
+        const response = await fetch(`/api/v1/chat/conversations/${encodeURIComponent(conversationId)}`, {
+            method: 'PUT',
+            headers: getAuthHeaders(),
+            body: JSON.stringify(params),
+        });
+
+        if (!response.ok) {
+            throw new Error('更新对话失败');
+        }
+    },
+
+    /**
+     * 删除对话
+     */
+    async deleteConversation(conversationId: string): Promise<void> {
+        const response = await fetch(`/api/v1/chat/conversations/${encodeURIComponent(conversationId)}`, {
+            method: 'DELETE',
+            headers: getAuthHeaders(),
+        });
+
+        if (!response.ok) {
+            throw new Error('删除对话失败');
+        }
     },
 };
 

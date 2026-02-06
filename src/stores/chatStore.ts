@@ -44,73 +44,13 @@ interface ChatState {
     getConversationsByTag: (tagId: string) => Conversation[];
 }
 
-// Mock 历史对话数据
-const mockConversations: Conversation[] = [
-    {
-        id: 'conv-1',
-        title: '糖尿病足溃疡治疗方案咨询',
-        expertId: 'expert-1',
-        expertName: '创面护理专家',
-        expertAvatar: '🩹',
-        messages: [],
-        messageCount: 8,
-        createdAt: '2024-01-15T10:30:00Z',
-        updatedAt: '2024-01-15T11:00:00Z',
-        isPinned: true,
-    },
-    {
-        id: 'conv-2',
-        title: '海藻酸钠水凝胶配方优化',
-        expertId: 'expert-2',
-        expertName: '生物材料分析师',
-        expertAvatar: '🧬',
-        messages: [],
-        messageCount: 12,
-        createdAt: '2024-01-14T14:00:00Z',
-        updatedAt: '2024-01-14T15:30:00Z',
-    },
-    {
-        id: 'conv-3',
-        title: '创面敷料文献综述',
-        expertId: 'expert-3',
-        expertName: '文献综述助手',
-        expertAvatar: '📚',
-        messages: [],
-        messageCount: 6,
-        createdAt: '2024-01-13T09:00:00Z',
-        updatedAt: '2024-01-13T10:00:00Z',
-    },
-    {
-        id: 'conv-4',
-        title: '压疮护理指南',
-        expertId: 'expert-1',
-        expertName: '创面护理专家',
-        expertAvatar: '🩹',
-        messages: [],
-        messageCount: 5,
-        createdAt: '2024-01-12T16:00:00Z',
-        updatedAt: '2024-01-12T16:45:00Z',
-    },
-    {
-        id: 'conv-5',
-        title: '壳聚糖生物相容性分析',
-        expertId: 'expert-2',
-        expertName: '生物材料分析师',
-        expertAvatar: '🧬',
-        messages: [],
-        messageCount: 9,
-        createdAt: '2024-01-11T11:00:00Z',
-        updatedAt: '2024-01-11T12:30:00Z',
-    },
-];
-
 export const useChatStore = create<ChatState>()(
     persist(
         (set, get) => ({
             currentConversation: null,
             messages: [],
             isStreaming: false,
-            conversations: mockConversations,
+            conversations: [],
             currentExpertId: null,
             currentExpertName: null,
             currentExpertAvatar: null,

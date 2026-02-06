@@ -1,69 +1,75 @@
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-from contextlib import asynccontextmanager
+"""
+Bio-Agent Platform Backend API
+集成对话记录管理系统
+"""
 
-# 生命周期管理
+from fastapi import FastAPI, Request, status
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from fastapi.exceptions import RequestValidationError
+from contextlib import asynccontextmanager
+import logging
+from typing import Dict, Any
+
+from app.core.config import settings
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup
-    print("Backend service starting up...")
+    """应用生命周期管理"""
+    logger.info("Backend service starting up...")
+    
     from app.db.mongo import mongodb
     from app.db.neo4j import neo4j_db
     from app.services.llm import llm_service
+    from app.services.auth_service import auth_service
+    from app.services.skill_db import skill_service
+    from app.services.conversation_service import conversation_service
     
     try:
         await llm_service.start()
+        logger.info("✓ LLMService initialized")
     except Exception as e:
-        print(f"Error: LLMService initialization failed: {e}")
+        logger.error(f"✗ LLMService failed: {e}")
 
     try:
         mongodb.connect()
-        print("MongoDB initialized.")
+        logger.info("✓ MongoDB connected")
+        await auth_service.init_default_admin()
+        await skill_service.init_defaults()
+        # 创建对话记录索引
+        await conversation_service._ensure_indexes()
+        logger.info("✓ Conversation indexes created")
     except Exception as e:
-        print(f"Error: MongoDB connection failed: {e}")
-        # In production/docker, we might want to fail hard, but for now log error
+        logger.error(f"✗ MongoDB failed: {e}")
         
     try:
         neo4j_db.connect()
-        print("Neo4j initialized.")
+        logger.info("✓ Neo4j connected")
     except Exception as e:
-        print(f"Error: Neo4j connection failed: {e}")
+        logger.warning(f"⊘ Neo4j skipped: {e}")
 
-    try:
-        from app.db.postgres import pg_db
-        pg_db.connect()
-        await pg_db.init_extensions()
-        print("PostgreSQL initialized.")
-    except Exception as e:
-        print(f"Error: PostgreSQL connection failed: {e}")
+    logger.info("✓ Backend service ready")
     
     yield
-    # Shutdown
+    
+    logger.info("Backend service shutting down...")
     try:
         await llm_service.stop()
-    except Exception as e:
-        print(f"Error: LLMService shutdown failed: {e}")
-
-    try:
         mongodb.close()
-    except: pass
-    
-    try:
         neo4j_db.close()
-    except: pass
-
-    try:
-        await pg_db.close()
-    except: pass
-    print("Backend service shutting down...")
-
-from app.api import knowledge
+    except:
+        pass
+    logger.info("✓ Shutdown complete")
 
 app = FastAPI(
-    title="Biomedical Agent Platform API",
-    description="Backend service for Biomedical Agent Platform supporting Chat, Knowledge Base, and BioExtract features.",
-    version="1.0.0",
-    lifespan=lifespan
+    title="Bio-Agent Platform API",
+    version="2.0.0",
+    lifespan=lifespan,
+    docs_url="/docs",
+    redoc_url="/redoc",
 )
 
 # CORS 配置
@@ -73,30 +79,49 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"],
 )
 
-app.include_router(knowledge.router, prefix="/api/v1", tags=["Knowledge"])
+# 全局异常处理
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    return JSONResponse(
+        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        content={"error": "Validation Error", "detail": exc.errors()}
+    )
 
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    logger.error(f"Error: {exc}")
+    return JSONResponse(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        content={"error": "Internal Server Error", "message": str(exc)}
+    )
 
-from app.api import chat
+# 路由注册
+from app.api import knowledge, chat, config, skills, files, bioextract, neo4j, auth, mcp, playground, users, admin
+
+app.include_router(auth.router, prefix="/api/v1", tags=["Auth"])
+app.include_router(users.router, prefix="/api/v1", tags=["Users"])
 app.include_router(chat.router, prefix="/api/v1/chat", tags=["Chat"])
-
-from app.api import config
-app.include_router(config.router, prefix="/api/v1", tags=["System Config"])
-
-from app.api import skills
-app.include_router(skills.router, prefix="/api/v1", tags=["Skills Management"])
-
-from app.api import files
-app.include_router(files.router, prefix="/api/v1", tags=["Files & OCR"])
-
-from app.api import bioextract
-app.include_router(bioextract.router, prefix="/api/v1", tags=["BioExtract-AI"])
+app.include_router(admin.router, prefix="/api/v1", tags=["Admin"])
+app.include_router(knowledge.router, prefix="/api/v1", tags=["Knowledge"])
+app.include_router(config.router, prefix="/api/v1", tags=["Config"])
+app.include_router(skills.router, prefix="/api/v1", tags=["Skills"])
+app.include_router(files.router, prefix="/api/v1", tags=["Files"])
+app.include_router(bioextract.router, prefix="/api/v1", tags=["BioExtract"])
+app.include_router(neo4j.router, prefix="/api/v1", tags=["Neo4j"])
+app.include_router(mcp.router, prefix="/api/v1", tags=["MCP"])
+app.include_router(playground.router, prefix="/api/v1", tags=["Playground"])
 
 @app.get("/")
 async def root():
-    return {"message": "Welcome to Biomedical Agent Platform API", "status": "running"}
+    return {"message": "Bio-Agent API", "version": "2.0.0", "status": "running"}
 
 @app.get("/health")
-async def health_check():
-    return {"status": "ok"}
+async def health():
+    return {"status": "healthy"}
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("app.main:app", host="0.0.0.0", port=8001, reload=True)
