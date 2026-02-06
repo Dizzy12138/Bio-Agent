@@ -103,21 +103,25 @@ class DatabaseInitializer:
         return records
     
     async def create_indexes(self):
-        """创建数据库索引"""
-        print("\n📊 Creating indexes...")
+        """创建数据库索引（为所有集合创建必要索引）"""
+        print("\n📊 Creating indexes for all collections...")
         
         if self.dry_run:
             print("   Skipped (dry run)")
             return
         
-        # documents collection indexes
+        # =============================================
+        # 核心业务数据表
+        # =============================================
+        
+        # documents collection - 论文文献
         docs = self.db["documents"]
         await docs.create_index("paper_id", unique=True)
         await docs.create_index("source_tables")
         await docs.create_index([("title", "text"), ("authors", "text")])
-        print("   ✓ documents indexes created")
+        print("   ✓ documents")
         
-        # biomaterials collection indexes
+        # biomaterials collection - 生物材料
         bio = self.db["biomaterials"]
         await bio.create_index("id", unique=True)
         await bio.create_index("category")
@@ -125,27 +129,165 @@ class DatabaseInitializer:
         await bio.create_index("paper_id")
         await bio.create_index("name")
         await bio.create_index([("name", "text"), ("paper_titles", "text")])
-        print("   ✓ biomaterials indexes created")
+        print("   ✓ biomaterials")
         
-        # users collection indexes
+        # paper_tags collection - 论文标签
+        tags = self.db["paper_tags"]
+        await tags.create_index("paper_id", unique=True)
+        await tags.create_index("l1")
+        await tags.create_index("l2")
+        await tags.create_index("classification")
+        print("   ✓ paper_tags")
+        
+        # atps_records collection - ATPS 记录
+        atps = self.db["atps_records"]
+        await atps.create_index("polymer1")
+        await atps.create_index("polymer2")
+        await atps.create_index([("polymer1", 1), ("polymer2", 1)])
+        print("   ✓ atps_records")
+        
+        # assemblies collection - 组装体
+        assemblies = self.db["assemblies"]
+        await assemblies.create_index("system_id", unique=True)
+        await assemblies.create_index("category")
+        await assemblies.create_index("paper_id")
+        print("   ✓ assemblies")
+        
+        # =============================================
+        # 用户与认证
+        # =============================================
+        
+        # users collection - 用户
         users = self.db["users"]
         await users.create_index("username", unique=True)
         await users.create_index("email", unique=True)
-        print("   ✓ users indexes created")
+        await users.create_index("role")
+        await users.create_index("is_active")
+        print("   ✓ users")
         
-        # conversations collection indexes
+        # =============================================
+        # 对话管理
+        # =============================================
+        
+        # conversations collection - 对话
         convos = self.db["conversations"]
+        await convos.create_index("id", unique=True)
         await convos.create_index("user_id")
         await convos.create_index("created_at")
+        await convos.create_index("updated_at")
         await convos.create_index([("user_id", 1), ("created_at", -1)])
-        print("   ✓ conversations indexes created")
+        await convos.create_index([("user_id", 1), ("updated_at", -1)])
+        print("   ✓ conversations")
         
-        # messages collection indexes
+        # messages collection - 消息
         msgs = self.db["messages"]
+        await msgs.create_index("id", unique=True)
         await msgs.create_index("conversation_id")
         await msgs.create_index("timestamp")
         await msgs.create_index([("conversation_id", 1), ("timestamp", 1)])
-        print("   ✓ messages indexes created")
+        print("   ✓ messages")
+        
+        # =============================================
+        # Agent 与 LLM 配置
+        # =============================================
+        
+        # agents collection - Agent 配置
+        agents = self.db["agents"]
+        await agents.create_index("id", unique=True)
+        await agents.create_index("name")
+        await agents.create_index("is_active")
+        await agents.create_index("created_at")
+        print("   ✓ agents")
+        
+        # llm_providers collection - LLM 提供商
+        providers = self.db["llm_providers"]
+        await providers.create_index("id", unique=True)
+        await providers.create_index("name")
+        await providers.create_index("provider_type")
+        await providers.create_index("is_active")
+        print("   ✓ llm_providers")
+        
+        # prompts collection - 提示词模板
+        prompts = self.db["prompts"]
+        await prompts.create_index("id", unique=True)
+        await prompts.create_index("name")
+        await prompts.create_index("category")
+        await prompts.create_index("is_active")
+        print("   ✓ prompts")
+        
+        # =============================================
+        # MCP 配置
+        # =============================================
+        
+        # mcp_configs collection - MCP 全局配置
+        mcp_configs = self.db["mcp_configs"]
+        await mcp_configs.create_index("id", unique=True)
+        await mcp_configs.create_index("name")
+        print("   ✓ mcp_configs")
+        
+        # mcp_servers collection - MCP 服务器
+        mcp_servers = self.db["mcp_servers"]
+        await mcp_servers.create_index("id", unique=True)
+        await mcp_servers.create_index("name")
+        await mcp_servers.create_index("is_active")
+        print("   ✓ mcp_servers")
+        
+        # mcp_tools collection - MCP 工具
+        mcp_tools = self.db["mcp_tools"]
+        await mcp_tools.create_index("id", unique=True)
+        await mcp_tools.create_index("server_id")
+        await mcp_tools.create_index("name")
+        await mcp_tools.create_index("is_enabled")
+        print("   ✓ mcp_tools")
+        
+        # =============================================
+        # 知识库与技能
+        # =============================================
+        
+        # knowledge_bases collection - 知识库
+        kb = self.db["knowledge_bases"]
+        await kb.create_index("id", unique=True)
+        await kb.create_index("name")
+        await kb.create_index("category")
+        await kb.create_index("created_at")
+        print("   ✓ knowledge_bases")
+        
+        # skills collection - 技能
+        skills = self.db["skills"]
+        await skills.create_index("id", unique=True)
+        await skills.create_index("name")
+        await skills.create_index("category")
+        await skills.create_index("is_active")
+        print("   ✓ skills")
+        
+        # =============================================
+        # 文件与任务
+        # =============================================
+        
+        # files collection - 文件存储
+        files = self.db["files"]
+        await files.create_index("id", unique=True)
+        await files.create_index("filename")
+        await files.create_index("user_id")
+        await files.create_index("created_at")
+        print("   ✓ files")
+        
+        # ocr_tasks collection - OCR 任务
+        ocr = self.db["ocr_tasks"]
+        await ocr.create_index("id", unique=True)
+        await ocr.create_index("file_id")
+        await ocr.create_index("status")
+        await ocr.create_index("created_at")
+        print("   ✓ ocr_tasks")
+        
+        # playground_sessions collection - Playground 会话
+        playground = self.db["playground_sessions"]
+        await playground.create_index("id", unique=True)
+        await playground.create_index("user_id")
+        await playground.create_index("created_at")
+        print("   ✓ playground_sessions")
+        
+        print("\n   ✓ All 18 collections initialized with indexes")
     
     async def import_documents(self, delivery_records: List[Dict], microbe_records: List[Dict]):
         """导入文献表 (去重合并)"""
