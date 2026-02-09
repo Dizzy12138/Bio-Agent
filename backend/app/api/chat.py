@@ -259,10 +259,15 @@ async def generate_conversation_title(
 
 标题:"""
         
-        # 调用 LLM 生成标题
+        # 调用 LLM 生成标题 - 使用系统配置的默认模型
         messages = [{"role": "user", "content": prompt}]
         title = ""
-        async for chunk in llm_service.stream_chat(messages, model="gpt-3.5-turbo", temperature=0.7):
+        try:
+            default_cfg = await config_service.get_default_provider_config()
+            title_model = default_cfg.get("model") if default_cfg else None
+        except Exception:
+            title_model = None
+        async for chunk in llm_service.stream_chat(messages, model=title_model or "gpt-3.5-turbo", temperature=0.7):
             title += chunk
         
         # 清理标题（去除引号、换行等）
@@ -424,9 +429,9 @@ async def chat_completions(
             except Exception as e:
                 print(f"⚠️  读取默认模型配置失败: {e}")
         
-        # Final fallback
+        # Final fallback: 不应到达这里，但保持安全
         if not model:
-            model = "gpt-3.5-turbo"
+            model = "gpt-3.5-turbo"  # 仅在所有配置源都失败时使用
 
         if req.expert_id:
             agent_config = await config_service.get_agent(req.expert_id)

@@ -31,7 +31,7 @@ load_dotenv()
 # =============================================
 
 # External Paper API
-API_BASE_URL = "http://matai.zhijiucity.com:36001/api/v1/papers"
+API_BASE_URL = os.getenv("PAPER_API_BASE_URL", "http://matai.zhijiucity.com:36001/api/v1/papers")
 # AUTH_TOKEN will be replaced by user
 AUTH_TOKEN = os.getenv("PAPER_API_TOKEN", "Bearer YOUR_TOKEN_HERE")
 

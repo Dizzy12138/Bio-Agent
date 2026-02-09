@@ -7,20 +7,16 @@ import re
 import httpx
 from typing import Optional, Tuple
 from app.models.bioextract import PaperMarkdownResponse, PaperPDFResponse
+from app.core.config import settings
 
 
 class PaperAPIService:
     """
     外部论文服务 API 客户端
     
-    API 端点: http://matai.zhijiucity.com:36001/api/v1/papers/{paper_id}/{type}
+    API 端点由环境变量 PAPER_API_BASE_URL 配置
     支持获取: markdown, pdf
     """
-    
-    BASE_URL = "http://matai.zhijiucity.com:36001/api/v1/papers"
-    
-    # 认证 Token (TODO: 考虑移到环境变量)
-    AUTH_TOKEN = "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiYTdkYzEyN2EtNjk0OC00YWQ3LTg0NWQtMDA4ZDU4YWExN2YzIiwidXNlcm5hbWUiOiJhZG1pbiIsInJvbGUiOiJhZG1pbiIsImV4cCI6MTc3MTQ2OTQ1MH0.fut9oYGb4DYNLC8NA1GxI5QaSAbh-xRuEX38H1nxc2M"
     
     # Base64 图片正则匹配模式
     BASE64_IMAGE_PATTERN = re.compile(
@@ -31,6 +27,8 @@ class PaperAPIService:
     def __init__(self, timeout: float = 60.0):
         self.timeout = timeout
         self.client = httpx.AsyncClient(timeout=timeout)
+        self.base_url = settings.PAPER_API_BASE_URL.rstrip('/')
+        self.auth_token = settings.PAPER_API_TOKEN or ""
     
     async def close(self):
         """关闭 HTTP 客户端"""
@@ -40,7 +38,7 @@ class PaperAPIService:
         """获取请求头"""
         accept = "text/markdown, text/plain, */*" if content_type == "markdown" else "application/pdf, */*"
         return {
-            "Authorization": self.AUTH_TOKEN,
+            "Authorization": self.auth_token,
             "Accept": accept
         }
     
@@ -81,7 +79,7 @@ class PaperAPIService:
         Raises:
             httpx.HTTPStatusError: API 请求失败
         """
-        url = f"{self.BASE_URL}/{paper_id}/markdown"
+        url = f"{self.base_url}/{paper_id}/markdown"
         headers = self._get_headers("markdown")
         
         response = await self.client.get(url, headers=headers)
@@ -110,7 +108,7 @@ class PaperAPIService:
         Returns:
             str: 原始 Markdown 内容
         """
-        url = f"{self.BASE_URL}/{paper_id}/markdown"
+        url = f"{self.base_url}/{paper_id}/markdown"
         headers = self._get_headers("markdown")
         
         response = await self.client.get(url, headers=headers)
@@ -130,7 +128,7 @@ class PaperAPIService:
         Returns:
             PaperPDFResponse: 包含 PDF URL
         """
-        url = f"{self.BASE_URL}/{paper_id}/pdf"
+        url = f"{self.base_url}/{paper_id}/pdf"
         
         return PaperPDFResponse(
             paper_id=paper_id,
@@ -147,7 +145,7 @@ class PaperAPIService:
         Returns:
             bytes: PDF 文件内容
         """
-        url = f"{self.BASE_URL}/{paper_id}/pdf"
+        url = f"{self.base_url}/{paper_id}/pdf"
         headers = self._get_headers("pdf")
         
         response = await self.client.get(url, headers=headers)
@@ -165,7 +163,7 @@ class PaperAPIService:
         Returns:
             bool: 论文是否存在
         """
-        url = f"{self.BASE_URL}/{paper_id}/markdown"
+        url = f"{self.base_url}/{paper_id}/markdown"
         headers = self._get_headers("markdown")
         
         try:

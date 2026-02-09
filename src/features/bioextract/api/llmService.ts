@@ -170,7 +170,7 @@ export function getLLMConfig(): LLMConfig | null {
                 provider: providerType,
                 apiKey: enabledProvider.apiKey,
                 baseUrl: enabledProvider.baseUrl,
-                model: enabledProvider.models?.[0] || 'gpt-4o-mini',
+                model: enabledProvider.models?.[0] || 'gpt-4o-mini', // 最后兜底，仅在所有配置源失败时
                 temperature: DEFAULT_CONFIG.temperature,
                 maxTokens: DEFAULT_CONFIG.maxTokens,
             };

@@ -10,8 +10,8 @@ class LLMService:
         # API Keys (fallback from env vars)
         self.openai_api_key = settings.OPENAI_API_KEY
         self.anthropic_api_key = settings.ANTHROPIC_API_KEY
-        self.openai_base_url = "https://api.openai.com/v1"
-        self.anthropic_base_url = "https://api.anthropic.com/v1"
+        self.openai_base_url = os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1")
+        self.anthropic_base_url = os.getenv("ANTHROPIC_BASE_URL", "https://api.anthropic.com/v1")
 
         self.client: Optional[httpx.AsyncClient] = None
         self.anthropic_client = None
@@ -85,7 +85,7 @@ class LLMService:
     async def stream_chat(
         self,
         messages: List[Dict[str, str]],
-        model: str = "gpt-3.5-turbo",
+        model: str = None,
         temperature: float = 0.7,
         max_tokens: int = 8192
     ) -> AsyncGenerator[str, None]:

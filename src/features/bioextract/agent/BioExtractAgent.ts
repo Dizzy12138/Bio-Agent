@@ -8,7 +8,7 @@
  * 4. 支持从 Agent 管理模块读取可配置的提示词
  */
 
-import { callLLM, type LLMConfig, type ChatMessage } from '../api/llmService';
+import { callLLM, getLLMConfig, type LLMConfig, type ChatMessage } from '../api/llmService';
 import { getAgentPrompt, BIOEXTRACT_SYSTEM_PROMPT } from '../../experts/templates';
 import { executeTool, generateToolDescriptions, type MCPToolResult } from '../../mcp';
 
@@ -148,10 +148,10 @@ export class BioExtractAgent {
         this.callbacks = callbacks;
 
         // 默认空配置
-        const defaultConfig: LLMConfig = {
+        const defaultConfig: LLMConfig = getLLMConfig() || {
             provider: 'openai',
             apiKey: '',
-            model: 'gpt-3.5-turbo',
+            model: 'gpt-3.5-turbo',  // 仅在所有配置源都失败时使用
             baseUrl: ''
         };
 

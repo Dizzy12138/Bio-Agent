@@ -58,6 +58,6 @@ class ChatRequest(BaseModel):
     message: str
     conversation_id: Optional[str] = None
     expert_id: Optional[str] = None
-    model: Optional[str] = "gpt-3.5-turbo"
+    model: Optional[str] = None  # 使用系统默认模型
     temperature: Optional[float] = 0.7
     stream: bool = True

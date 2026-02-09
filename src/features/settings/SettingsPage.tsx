@@ -399,7 +399,7 @@ export const SettingsPage: React.FC = () => {
                                             outline: 'none',
                                         }}
                                     >
-                                        <option value="">未设置（使用 gpt-3.5-turbo 兜底）</option>
+                                        <option value="">未设置（使用第一个可用模型兜底）</option>
                                         {allProviderModels.map(item => (
                                             <option key={`${item.providerId}|${item.model}`} value={`${item.providerId}|${item.model}`}>
                                                 {item.providerName} / {item.model}

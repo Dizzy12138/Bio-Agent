@@ -12,19 +12,23 @@ from datetime import datetime
 from typing import Optional, Dict, List, Any, Tuple
 from motor.motor_asyncio import AsyncIOMotorClient
 from pathlib import Path
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # =============================================
 # 配置
 # =============================================
-MONGODB_URL = "mongodb://localhost:27017"
-DATABASE_NAME = "biomedical_agent"
+MONGODB_URL = os.getenv("MONGODB_URL", "mongodb://localhost:27017")
+DATABASE_NAME = os.getenv("MONGODB_DB_NAME", "biomedical_platform")
 
 # CSV 文件路径
 DELIVERY_CSV = Path(__file__).parent.parent.parent / "递送系统提取_export_2026-01-27 (1).csv"
 MICROBE_CSV = Path(__file__).parent.parent.parent / "微生物提取_export_2026-01-29 (1).csv"
 
 # Markdown API
-MARKDOWN_API_BASE = "http://localhost:8001/api/v1/bioextract/papers"
+MARKDOWN_API_BASE = os.getenv("MARKDOWN_API_BASE", "http://localhost:8001/api/v1/bioextract/papers")
 
 # 并发控制
 CONCURRENT_LIMIT = 10

@@ -40,7 +40,7 @@ class Settings(BaseSettings):
     NEO4J_MAX_CONNECTION_LIFETIME: int = 3600
     
     # PostgreSQL
-    POSTGRES_URL: str = "postgresql://bioagent:bioagent2024@localhost:5432/biomedical"
+    POSTGRES_URL: str = "postgresql://localhost:5432/biomedical"
     POSTGRES_POOL_SIZE: int = 5
     POSTGRES_MAX_OVERFLOW: int = 10
     
@@ -55,8 +55,8 @@ class Settings(BaseSettings):
     # =============================================
     # 外部服务
     # =============================================
-    PAPER_API_BASE_URL: str = "http://140.206.138.45:8000"
-    PAPER_API_TOKEN: Optional[str] = None
+    PAPER_API_BASE_URL: str = ""  # 例: http://example.com:36001/api/v1/papers
+    PAPER_API_TOKEN: Optional[str] = None  # 例: Bearer eyJ...
     
     # =============================================
     # 日志配置

@@ -5,9 +5,13 @@
 """
 
 import asyncio
+import os
 from motor.motor_asyncio import AsyncIOMotorClient
 from datetime import datetime
 from typing import Dict, List, Any
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 async def aggregate_materials():
@@ -19,8 +23,10 @@ async def aggregate_materials():
     - 保留第一条的 composition/functional_performance 等属性
     - 统计 paper_count
     """
-    client = AsyncIOMotorClient('mongodb://localhost:27017')
-    db = client['biomedical_agent']
+    mongo_url = os.getenv("MONGODB_URL", "mongodb://localhost:27017")
+    db_name = os.getenv("MONGODB_DB_NAME", "biomedical_platform")
+    client = AsyncIOMotorClient(mongo_url)
+    db = client[db_name]
     
     print("=" * 60)
     print("材料聚类合并")
