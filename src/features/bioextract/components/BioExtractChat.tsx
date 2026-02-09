@@ -257,7 +257,6 @@ export const BioExtractChat: React.FC = () => {
         setInputValue('');
 
         // 如果没有当前对话,先创建一个
-        let isNewConversation = false;
         let convId = currentConversationId;
         if (!convId) {
             try {
@@ -265,7 +264,6 @@ export const BioExtractChat: React.FC = () => {
                 convId = newConv.id;
                 setCurrentConversationId(convId);
                 setConversations([newConv, ...conversations]);
-                isNewConversation = true;
             } catch (error) {
                 console.error('创建对话失败:', error);
             }
@@ -284,12 +282,14 @@ export const BioExtractChat: React.FC = () => {
             }
         }
 
-        // 首轮对话完成后自动生成标题
-        if (isNewConversation && convId) {
-            generateAndUpdateTitle(convId, userInput);
-        } else {
-            // 发送消息后重新加载对话列表(更新时间)
-            setTimeout(() => loadConversations(), 1000);
+        // 如果对话标题仍为默认值，自动生成标题
+        if (convId) {
+            const conv = conversations.find(c => c.id === convId);
+            if (!conv || !conv.title || conv.title === '新对话') {
+                generateAndUpdateTitle(convId, userInput);
+            } else {
+                setTimeout(() => loadConversations(), 1000);
+            }
         }
     };
 
@@ -298,7 +298,6 @@ export const BioExtractChat: React.FC = () => {
         if (isProcessing) return;
 
         // 如果没有当前对话,先创建一个
-        let isNewConversation = false;
         let convId = currentConversationId;
         if (!convId) {
             try {
@@ -306,7 +305,6 @@ export const BioExtractChat: React.FC = () => {
                 convId = newConv.id;
                 setCurrentConversationId(convId);
                 setConversations([newConv, ...conversations]);
-                isNewConversation = true;
             } catch (error) {
                 console.error('创建对话失败:', error);
             }
@@ -325,11 +323,14 @@ export const BioExtractChat: React.FC = () => {
             }
         }
 
-        // 首轮对话完成后自动生成标题
-        if (isNewConversation && convId) {
-            generateAndUpdateTitle(convId, prompt);
-        } else {
-            setTimeout(() => loadConversations(), 1000);
+        // 如果对话标题仍为默认值，自动生成标题
+        if (convId) {
+            const conv = conversations.find(c => c.id === convId);
+            if (!conv || !conv.title || conv.title === '新对话') {
+                generateAndUpdateTitle(convId, prompt);
+            } else {
+                setTimeout(() => loadConversations(), 1000);
+            }
         }
     };
 
