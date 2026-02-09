@@ -13,6 +13,7 @@ import {
     getLLMConfig,
     buildSystemPrompt,
     syncProviders,
+    syncSystemSettings,
     type LLMConfig,
     type ChatMessage
 } from '../api/llmService';
@@ -162,6 +163,7 @@ export const useBioExtractStore = create<BioExtractState>((set, get) => ({
     initSession: async () => {
         // 先同步后端 providers 到本地缓存
         await syncProviders();
+        await syncSystemSettings();
 
         const savedConfig = getLLMConfig();
 

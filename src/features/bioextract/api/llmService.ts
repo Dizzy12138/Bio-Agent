@@ -95,27 +95,76 @@ export async function syncProviders(): Promise<void> {
     }
 }
 
-// 从 localStorage 或后端获取配置
-export function getLLMConfig(): LLMConfig | null {
-    // 1. 首先尝试从旧的 bioextract 配置读取（向后兼容）
+// =============================================
+// System Settings 缓存（默认模型配置）
+// =============================================
+const SYSTEM_SETTINGS_CACHE_KEY = 'llm_system_settings_cache';
+const SYSTEM_SETTINGS_CACHE_TTL = 60 * 1000; // 1 分钟
+
+interface SystemSettingsCache {
+    defaultProviderId: string | null;
+    defaultModel: string | null;
+    updatedAt: number;
+}
+
+function getCachedSystemSettings(): SystemSettingsCache | null {
     try {
-        const stored = localStorage.getItem(LLM_CONFIG_STORAGE_KEY);
-        if (stored) {
-            const config = JSON.parse(stored);
-            if (config.apiKey) {
-                return config;
+        const cached = localStorage.getItem(SYSTEM_SETTINGS_CACHE_KEY);
+        if (cached) {
+            const data = JSON.parse(cached) as SystemSettingsCache;
+            if (Date.now() - data.updatedAt < SYSTEM_SETTINGS_CACHE_TTL) {
+                return data;
             }
         }
+    } catch { /* ignore */ }
+    return null;
+}
+
+// 同步系统设置到缓存
+export async function syncSystemSettings(): Promise<void> {
+    try {
+        const res = await fetch('/api/v1/config/settings');
+        if (res.ok) {
+            const data = await res.json();
+            const cache: SystemSettingsCache = {
+                defaultProviderId: data.defaultProviderId || null,
+                defaultModel: data.defaultModel || null,
+                updatedAt: Date.now(),
+            };
+            localStorage.setItem(SYSTEM_SETTINGS_CACHE_KEY, JSON.stringify(cache));
+        }
     } catch (e) {
-        console.error('Failed to load LLM config:', e);
+        console.error('Failed to sync system settings:', e);
+    }
+}
+
+// 从 localStorage 或后端获取配置
+export function getLLMConfig(): LLMConfig | null {
+    const cache = getCachedProviders();
+    const systemSettings = getCachedSystemSettings();
+
+    // 1. 优先使用系统设置中配置的默认模型
+    if (systemSettings?.defaultProviderId && systemSettings?.defaultModel && cache) {
+        const defaultProvider = cache.providers.find(
+            p => p.id === systemSettings.defaultProviderId && p.isEnabled
+        );
+        if (defaultProvider) {
+            const providerType = detectProviderType(defaultProvider.name, defaultProvider.baseUrl);
+            return {
+                provider: providerType,
+                apiKey: defaultProvider.apiKey,
+                baseUrl: defaultProvider.baseUrl,
+                model: systemSettings.defaultModel,
+                temperature: DEFAULT_CONFIG.temperature,
+                maxTokens: DEFAULT_CONFIG.maxTokens,
+            };
+        }
     }
 
-    // 2. 尝试从缓存的 providers 中获取第一个启用的
-    const cache = getCachedProviders();
+    // 2. 回退：使用第一个启用的 provider 的第一个模型
     if (cache && cache.providers.length > 0) {
         const enabledProvider = cache.providers.find(p => p.isEnabled);
         if (enabledProvider) {
-            // 根据 provider name 推断 provider type
             const providerType = detectProviderType(enabledProvider.name, enabledProvider.baseUrl);
             return {
                 provider: providerType,
@@ -126,6 +175,19 @@ export function getLLMConfig(): LLMConfig | null {
                 maxTokens: DEFAULT_CONFIG.maxTokens,
             };
         }
+    }
+
+    // 3. 最后回退：旧的 localStorage 配置（向后兼容）
+    try {
+        const stored = localStorage.getItem(LLM_CONFIG_STORAGE_KEY);
+        if (stored) {
+            const config = JSON.parse(stored);
+            if (config.apiKey) {
+                return config;
+            }
+        }
+    } catch (e) {
+        console.error('Failed to load LLM config:', e);
     }
 
     return null;
