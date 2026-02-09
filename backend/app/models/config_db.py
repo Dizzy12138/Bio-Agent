@@ -46,4 +46,7 @@ class SystemSettings(BaseModel):
     id: str = "system_settings"
     defaultProviderId: Optional[str] = None
     defaultModel: Optional[str] = None
+    # 外部服务配置
+    paperApiBaseUrl: Optional[str] = None
+    paperApiToken: Optional[str] = None
     updatedAt: datetime = datetime.now()

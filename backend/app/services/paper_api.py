@@ -27,8 +27,25 @@ class PaperAPIService:
     def __init__(self, timeout: float = 60.0):
         self.timeout = timeout
         self.client = httpx.AsyncClient(timeout=timeout)
+        # 默认从 env 读取，后续 _load_config 会尝试从 DB 覆盖
         self.base_url = settings.PAPER_API_BASE_URL.rstrip('/')
         self.auth_token = settings.PAPER_API_TOKEN or ""
+        self._config_loaded = False
+
+    async def _ensure_config(self):
+        """从 DB SystemSettings 加载配置（优先级高于 env）"""
+        if self._config_loaded:
+            return
+        self._config_loaded = True
+        try:
+            from app.services.config_db import config_service
+            sys_settings = await config_service.get_system_settings()
+            if sys_settings.paperApiBaseUrl:
+                self.base_url = sys_settings.paperApiBaseUrl.rstrip('/')
+            if sys_settings.paperApiToken:
+                self.auth_token = sys_settings.paperApiToken
+        except Exception:
+            pass  # 启动阶段 DB 可能不可用，使用 env 值
     
     async def close(self):
         """关闭 HTTP 客户端"""
@@ -79,6 +96,7 @@ class PaperAPIService:
         Raises:
             httpx.HTTPStatusError: API 请求失败
         """
+        await self._ensure_config()
         url = f"{self.base_url}/{paper_id}/markdown"
         headers = self._get_headers("markdown")
         
@@ -108,6 +126,7 @@ class PaperAPIService:
         Returns:
             str: 原始 Markdown 内容
         """
+        await self._ensure_config()
         url = f"{self.base_url}/{paper_id}/markdown"
         headers = self._get_headers("markdown")
         
@@ -128,6 +147,7 @@ class PaperAPIService:
         Returns:
             PaperPDFResponse: 包含 PDF URL
         """
+        await self._ensure_config()
         url = f"{self.base_url}/{paper_id}/pdf"
         
         return PaperPDFResponse(
@@ -145,6 +165,7 @@ class PaperAPIService:
         Returns:
             bytes: PDF 文件内容
         """
+        await self._ensure_config()
         url = f"{self.base_url}/{paper_id}/pdf"
         headers = self._get_headers("pdf")
         
@@ -163,6 +184,7 @@ class PaperAPIService:
         Returns:
             bool: 论文是否存在
         """
+        await self._ensure_config()
         url = f"{self.base_url}/{paper_id}/markdown"
         headers = self._get_headers("markdown")
         

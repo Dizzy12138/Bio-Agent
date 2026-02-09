@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Button, useToast, Modal } from '../../components/common';
-import { Plus, Trash2, Bot, Zap, Palette, Server, Shield, Settings, Users, MessageSquare, Eye, EyeOff, CheckCircle, XCircle, Loader, Star } from 'lucide-react';
+import { Plus, Trash2, Bot, Zap, Palette, Server, Shield, Settings, Users, MessageSquare, Eye, EyeOff, CheckCircle, XCircle, Loader, Star, Globe } from 'lucide-react';
 import { AgentConfigPanel } from '../experts';
 import { MCPConfigPanel } from '../mcp';
 import { UserManagement, ConversationManager } from './components';
@@ -27,13 +27,15 @@ interface SystemSettingsData {
     id: string;
     defaultProviderId: string | null;
     defaultModel: string | null;
+    paperApiBaseUrl: string | null;
+    paperApiToken: string | null;
 }
 
 export const SettingsPage: React.FC = () => {
     const { success, error } = useToast();
 
     // Load active tab from localStorage or default to 'agents'
-    const [activeTab, setActiveTab] = useState<'agents' | 'mcp' | 'models' | 'users' | 'conversations' | 'theme'>(() => {
+    const [activeTab, setActiveTab] = useState<'agents' | 'mcp' | 'models' | 'users' | 'conversations' | 'theme' | 'system'>(() => {
         return (localStorage.getItem('settings_active_tab') as any) || 'agents';
     });
 
@@ -52,10 +54,12 @@ export const SettingsPage: React.FC = () => {
         id: 'system_settings',
         defaultProviderId: null,
         defaultModel: null,
+        paperApiBaseUrl: null,
+        paperApiToken: null,
     });
 
     useEffect(() => {
-        if (activeTab === 'models') {
+        if (activeTab === 'models' || activeTab === 'system') {
             fetchProviders();
             fetchSystemSettings();
         }
@@ -282,6 +286,12 @@ export const SettingsPage: React.FC = () => {
             label: '主题设置',
             desc: '个性化界面外观',
             icon: <Palette size={20} />
+        },
+        {
+            id: 'system',
+            label: '系统配置',
+            desc: '外部服务与运行参数',
+            icon: <Globe size={20} />
         },
     ] as const;
 
@@ -579,6 +589,117 @@ export const SettingsPage: React.FC = () => {
                             </div>
                             <h3 style={{ fontSize: '18px', fontWeight: 600, color: 'var(--text-primary, #1e293b)', marginBottom: '8px' }}>主题设置</h3>
                             <p style={{ maxWidth: '320px', margin: '0 auto' }}>个性化主题配置正在开发中...</p>
+                        </div>
+                    )}
+
+                    {activeTab === 'system' && (
+                        <div style={{ maxWidth: '700px' }}>
+                            {/* 外部论文 API */}
+                            <div style={{
+                                marginBottom: '24px',
+                                padding: '24px',
+                                background: 'var(--bg-primary, white)',
+                                borderRadius: '12px',
+                                border: '1px solid var(--border-color, #e2e8f0)',
+                            }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
+                                    <Globe size={20} style={{ color: 'var(--primary-500, #3b82f6)' }} />
+                                    <span style={{ fontWeight: 600, fontSize: '15px', color: 'var(--text-primary, #1e293b)' }}>
+                                        外部论文 API
+                                    </span>
+                                    <span style={{ fontSize: '12px', color: 'var(--text-muted, #94a3b8)' }}>
+                                        BioExtract 论文解析服务
+                                    </span>
+                                </div>
+
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                                    <div>
+                                        <label style={{
+                                            display: 'block', fontSize: '13px', fontWeight: 500,
+                                            color: 'var(--text-secondary, #475569)', marginBottom: '6px'
+                                        }}>API 地址</label>
+                                        <input
+                                            type="text"
+                                            value={systemSettings.paperApiBaseUrl || ''}
+                                            onChange={(e) => setSystemSettings(prev => ({ ...prev, paperApiBaseUrl: e.target.value || null }))}
+                                            placeholder="例: http://matai.zhijiucity.com:36001/api/v1/papers"
+                                            style={{
+                                                width: '100%', padding: '10px 14px', borderRadius: '8px',
+                                                border: '1px solid var(--border-color, #e2e8f0)',
+                                                background: 'var(--bg-secondary, #f8fafc)',
+                                                fontSize: '13px', fontFamily: 'monospace',
+                                                color: 'var(--text-primary, #1e293b)',
+                                                outline: 'none', boxSizing: 'border-box',
+                                            }}
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label style={{
+                                            display: 'block', fontSize: '13px', fontWeight: 500,
+                                            color: 'var(--text-secondary, #475569)', marginBottom: '6px'
+                                        }}>Authorization Token</label>
+                                        <input
+                                            type="password"
+                                            value={systemSettings.paperApiToken || ''}
+                                            onChange={(e) => setSystemSettings(prev => ({ ...prev, paperApiToken: e.target.value || null }))}
+                                            placeholder="Bearer eyJ..."
+                                            style={{
+                                                width: '100%', padding: '10px 14px', borderRadius: '8px',
+                                                border: '1px solid var(--border-color, #e2e8f0)',
+                                                background: 'var(--bg-secondary, #f8fafc)',
+                                                fontSize: '13px', fontFamily: 'monospace',
+                                                color: 'var(--text-primary, #1e293b)',
+                                                outline: 'none', boxSizing: 'border-box',
+                                            }}
+                                        />
+                                        <p style={{ fontSize: '11px', color: 'var(--text-muted, #94a3b8)', marginTop: '4px' }}>
+                                            留空则使用环境变量 PAPER_API_TOKEN 的值
+                                        </p>
+                                    </div>
+
+                                    <div style={{ display: 'flex', justifyContent: 'flex-end', paddingTop: '8px' }}>
+                                        <Button
+                                            onClick={async () => {
+                                                try {
+                                                    const token = localStorage.getItem('auth_token');
+                                                    const apiBase = (import.meta as any).env?.VITE_API_BASE_URL || '';
+                                                    const resp = await fetch(`${apiBase}/api/v1/config/settings`, {
+                                                        method: 'PUT',
+                                                        headers: {
+                                                            'Content-Type': 'application/json',
+                                                            ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+                                                        },
+                                                        body: JSON.stringify(systemSettings),
+                                                    });
+                                                    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+                                                    success('系统配置已保存');
+                                                } catch (err: any) {
+                                                    error(`保存失败: ${err.message}`);
+                                                }
+                                            }}
+                                            leftIcon={<CheckCircle size={16} />}
+                                        >
+                                            保存配置
+                                        </Button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* 提示信息 */}
+                            <div style={{
+                                padding: '16px 20px',
+                                background: 'linear-gradient(135deg, var(--primary-50, #eff6ff) 0%, var(--bg-secondary, #f8fafc) 100%)',
+                                borderRadius: '10px',
+                                border: '1px solid var(--primary-100, #dbeafe)',
+                                fontSize: '13px',
+                                color: 'var(--text-secondary, #475569)',
+                                lineHeight: '1.6',
+                            }}>
+                                <strong>💡 说明：</strong>此处的配置优先于 <code>.env</code> 环境变量。
+                                如果某项留空，系统将使用环境变量中的值作为兜底。
+                                基础设施配置（数据库、端口等）请直接修改 <code>.env</code> 文件。
+                            </div>
                         </div>
                     )}
                 </div>

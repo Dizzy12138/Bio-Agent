@@ -8,14 +8,7 @@ export const LLMNode: React.FC<NodeProps> = memo(({ data, selected }) => {
     const nodeData = data as LLMNodeData;
 
     const getModelDisplayName = (model: string) => {
-        const modelNames: Record<string, string> = {
-            'gpt-4': 'GPT-4',
-            'gpt-4o': 'GPT-4o',
-            'claude-3.5-sonnet': 'Claude 3.5',
-            'llama-3': 'Llama 3',
-            'gemini-pro': 'Gemini Pro',
-        };
-        return modelNames[model] || model;
+        return model || '未配置';
     };
 
     return (

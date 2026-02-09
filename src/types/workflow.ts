@@ -25,7 +25,7 @@ export interface InputVariable {
 // LLM Reasoning Node
 export interface LLMNodeData extends BaseNodeData {
   label: string;
-  model: 'gpt-4' | 'gpt-4o' | 'claude-3.5-sonnet' | 'llama-3' | 'gemini-pro';
+  model: string;  // 动态从 Provider 配置读取
   systemPrompt: string;
   userPromptTemplate: string;
   temperature: number;

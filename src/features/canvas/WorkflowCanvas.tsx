@@ -31,7 +31,7 @@ const defaultNodeData: Record<string, CustomNodeData> = {
     },
     llm: {
         label: 'LLM推理',
-        model: 'gpt-4',
+        model: '',  // 用户需从配置的 Provider 中选择
         systemPrompt: '',
         userPromptTemplate: '',
         temperature: 0.7,

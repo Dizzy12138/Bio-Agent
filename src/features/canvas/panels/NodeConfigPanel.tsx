@@ -111,19 +111,49 @@ const LLMNodeConfig: React.FC<{
     data: LLMNodeData;
     onUpdate: (updates: Partial<LLMNodeData>) => void;
 }> = ({ data, onUpdate }) => {
+    const [modelOptions, setModelOptions] = React.useState<{ value: string; label: string }[]>([]);
+
+    React.useEffect(() => {
+        const loadModels = async () => {
+            try {
+                const token = localStorage.getItem('auth_token');
+                const apiBase = (import.meta as any).env?.VITE_API_BASE_URL || '';
+                const resp = await fetch(`${apiBase}/api/v1/config/providers`, {
+                    headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+                });
+                if (resp.ok) {
+                    const providers = await resp.json();
+                    const options: { value: string; label: string }[] = [];
+                    for (const p of providers) {
+                        if (p.isEnabled && p.models?.length) {
+                            for (const m of p.models) {
+                                options.push({ value: m, label: `${p.name} / ${m}` });
+                            }
+                        }
+                    }
+                    if (options.length > 0) {
+                        setModelOptions(options);
+                    }
+                }
+            } catch { /* 静默失败，使用空列表 */ }
+        };
+        loadModels();
+    }, []);
+
+    // 如果 API 没返回模型，至少显示当前选择的模型
+    const finalOptions = modelOptions.length > 0
+        ? modelOptions
+        : data.model
+            ? [{ value: data.model, label: data.model }]
+            : [];
+
     return (
         <>
             <Select
                 label="模型选择"
                 value={data.model}
                 onChange={(value) => onUpdate({ model: value as LLMNodeData['model'] })}
-                options={[
-                    { value: 'gpt-4', label: 'GPT-4' },
-                    { value: 'gpt-4o', label: 'GPT-4o' },
-                    { value: 'claude-3.5-sonnet', label: 'Claude 3.5 Sonnet' },
-                    { value: 'llama-3', label: 'Llama 3 (本地)' },
-                    { value: 'gemini-pro', label: 'Gemini Pro' },
-                ]}
+                options={finalOptions}
             />
             <TextArea
                 label="系统提示词"
