@@ -170,21 +170,25 @@ export const BioExtractChat: React.FC = () => {
 
     // 自动生成对话标题
     const generateAndUpdateTitle = async (convId: string, userInput: string) => {
+        // 1. 先立即设置一个基于用户输入的简单标题（保证标题一定存在）
+        const fallbackTitle = userInput.length > 20 ? userInput.slice(0, 20) + '...' : userInput;
         try {
+            await bioextractAPI.updateConversation(convId, { title: fallbackTitle });
+            loadConversations();
+        } catch (err) {
+            console.warn('设置初始标题失败:', err);
+        }
+
+        // 2. 异步尝试用 LLM 生成更好的标题（可选升级）
+        try {
+            const config = getLLMConfig();
+            if (!config) return;
+
             // 从 store 获取最新的 agent 回复
             const latestSession = useBioExtractStore.getState().session;
             const agentMessages = latestSession?.messages.filter(m => m.role === 'agent') || [];
             const lastAgentMsg = agentMessages[agentMessages.length - 1];
             const aiResponse = lastAgentMsg?.content || '';
-
-            const config = getLLMConfig();
-            if (!config) {
-                // 降级：截取用户消息
-                const fallbackTitle = userInput.length > 20 ? userInput.slice(0, 20) + '...' : userInput;
-                await bioextractAPI.updateConversation(convId, { title: fallbackTitle });
-                loadConversations();
-                return;
-            }
 
             const titleMessages: LLMChatMessage[] = [
                 {
@@ -203,20 +207,12 @@ export const BioExtractChat: React.FC = () => {
             let title = result.content.trim().replace(/^["'《]+|["'》]+$/g, '').trim();
             if (title) {
                 title = title.slice(0, 30);
-            } else {
-                title = userInput.length > 20 ? userInput.slice(0, 20) + '...' : userInput;
-            }
-
-            await bioextractAPI.updateConversation(convId, { title });
-            loadConversations();
-        } catch (error) {
-            console.error('自动生成标题失败:', error);
-            // 降级：用截断的用户消息作为标题
-            try {
-                const fallbackTitle = userInput.length > 20 ? userInput.slice(0, 20) + '...' : userInput;
-                await bioextractAPI.updateConversation(convId, { title: fallbackTitle });
+                await bioextractAPI.updateConversation(convId, { title });
                 loadConversations();
-            } catch { /* ignore */ }
+            }
+        } catch (error) {
+            console.warn('LLM 标题生成失败（已使用回退标题）:', error);
+            // 不需要额外处理 —— 步骤 1 已经设置了标题
         }
     };
 
