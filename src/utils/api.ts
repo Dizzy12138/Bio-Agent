@@ -12,14 +12,14 @@ const getApiBaseUrl = () => {
     if (import.meta.env.VITE_API_BASE_URL) {
         return import.meta.env.VITE_API_BASE_URL;
     }
-    
+
     // 如果是通过外部 IP 访问（不是 localhost），使用相同的 origin
     const hostname = window.location.hostname;
     if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
         // 使用当前访问的 host 和 port
         return `${window.location.protocol}//${window.location.host}/api/v1`;
     }
-    
+
     // 默认使用 localhost
     return 'http://localhost:8001/api/v1';
 };
@@ -51,7 +51,25 @@ api.interceptors.request.use(
     }
 );
 
-// 响应拦截器 - 处理token过期
+// ========== Token 刷新队列（防止并发 401 竞争） ==========
+let isRefreshing = false;
+let failedQueue: Array<{
+    resolve: (token: string) => void;
+    reject: (error: any) => void;
+}> = [];
+
+const processQueue = (error: any, token: string | null = null) => {
+    failedQueue.forEach(({ resolve, reject }) => {
+        if (error) {
+            reject(error);
+        } else {
+            resolve(token!);
+        }
+    });
+    failedQueue = [];
+};
+
+// 响应拦截器 - 处理token过期（带并发安全的刷新机制）
 api.interceptors.response.use(
     (response) => response,
     async (error) => {
@@ -59,10 +77,24 @@ api.interceptors.response.use(
 
         // Token过期，尝试刷新
         if (error.response?.status === 401 && !originalRequest._retry) {
-            originalRequest._retry = true;
+            // 如果正在刷新中，将请求加入等待队列
+            if (isRefreshing) {
+                return new Promise((resolve, reject) => {
+                    failedQueue.push({
+                        resolve: (token: string) => {
+                            originalRequest.headers.Authorization = `Bearer ${token}`;
+                            resolve(api(originalRequest));
+                        },
+                        reject,
+                    });
+                });
+            }
 
+            originalRequest._retry = true;
             const refreshToken = localStorage.getItem('refresh_token');
+
             if (refreshToken) {
+                isRefreshing = true;
                 try {
                     const { data } = await axios.post(
                         `${API_BASE_URL}/auth/refresh`,
@@ -72,19 +104,29 @@ api.interceptors.response.use(
                     localStorage.setItem('access_token', data.access_token);
                     localStorage.setItem('refresh_token', data.refresh_token);
 
+                    // 通知队列中所有等待的请求
+                    processQueue(null, data.access_token);
+
                     // 重试原请求
                     originalRequest.headers.Authorization = `Bearer ${data.access_token}`;
                     return api(originalRequest);
                 } catch (refreshError) {
-                    // 刷新失败，清除token并跳转登录
+                    // 刷新失败，通知队列中所有请求
+                    processQueue(refreshError, null);
+
+                    // 清除token并跳转登录
                     localStorage.removeItem('access_token');
                     localStorage.removeItem('refresh_token');
                     localStorage.removeItem('user_info');
                     window.location.href = '/login';
                     return Promise.reject(refreshError);
+                } finally {
+                    isRefreshing = false;
                 }
             } else {
                 // 没有refresh token，直接跳转登录
+                localStorage.removeItem('access_token');
+                localStorage.removeItem('user_info');
                 window.location.href = '/login';
             }
         }
@@ -117,16 +159,16 @@ export const authAPI = {
             username,
             password,
         });
-        
+
         // 保存token和用户信息
         const { access_token, refresh_token } = response.data;
         localStorage.setItem('access_token', access_token);
         localStorage.setItem('refresh_token', refresh_token);
-        
+
         // 获取用户信息
         const userInfo = await authAPI.getCurrentUser();
         localStorage.setItem('user_info', JSON.stringify(userInfo));
-        
+
         return response.data;
     },
 
@@ -189,13 +231,13 @@ export const chatAPI = {
     getConversation: (id: string) => api.get(`/chat/conversations/${id}`),
     updateConversation: (id: string, data: any) => api.put(`/chat/conversations/${id}`, data),
     deleteConversation: (id: string) => api.delete(`/chat/conversations/${id}`),
-    pinConversation: (id: string, isPinned: boolean) => 
+    pinConversation: (id: string, isPinned: boolean) =>
         api.post(`/chat/conversations/${id}/pin`, null, { params: { is_pinned: isPinned } }),
-    favoriteConversation: (id: string, isFavorite: boolean) => 
+    favoriteConversation: (id: string, isFavorite: boolean) =>
         api.post(`/chat/conversations/${id}/favorite`, null, { params: { is_favorite: isFavorite } }),
-    archiveConversation: (id: string, isArchived: boolean) => 
+    archiveConversation: (id: string, isArchived: boolean) =>
         api.post(`/chat/conversations/${id}/archive`, null, { params: { is_archived: isArchived } }),
-    searchConversations: (query: string) => 
+    searchConversations: (query: string) =>
         api.get('/chat/conversations/search', { params: { query } }),
     chatCompletion: (data: any) => api.post('/chat/completions', data),
 };
@@ -203,13 +245,13 @@ export const chatAPI = {
 // ==================== 技能API ====================
 
 export const skillsAPI = {
-    getAllSkills: (enabledOnly?: boolean) => 
+    getAllSkills: (enabledOnly?: boolean) =>
         api.get('/skills', { params: { enabled_only: enabledOnly } }),
     getSkill: (id: string) => api.get(`/skills/${id}`),
     createSkill: (data: any) => api.post('/skills', data),
     updateSkill: (id: string, data: any) => api.put(`/skills/${id}`, data),
     deleteSkill: (id: string) => api.delete(`/skills/${id}`),
-    toggleSkill: (id: string, enabled: boolean) => 
+    toggleSkill: (id: string, enabled: boolean) =>
         api.post(`/skills/${id}/toggle`, null, { params: { enabled } }),
     executeSkill: (id: string, params: any) => api.post(`/skills/${id}/execute`, { params }),
 };
@@ -222,7 +264,7 @@ export const mcpAPI = {
     getServer: (id: string) => api.get(`/mcp/servers/${id}`),
     updateServer: (id: string, data: any) => api.put(`/mcp/servers/${id}`, data),
     deleteServer: (id: string) => api.delete(`/mcp/servers/${id}`),
-    toggleServer: (id: string, isEnabled: boolean) => 
+    toggleServer: (id: string, isEnabled: boolean) =>
         api.post(`/mcp/servers/${id}/toggle`, null, { params: { is_enabled: isEnabled } }),
     connectServer: (id: string) => api.post(`/mcp/servers/${id}/connect`),
     disconnectServer: (id: string) => api.post(`/mcp/servers/${id}/disconnect`),
@@ -240,7 +282,7 @@ export const playgroundAPI = {
     getSession: (id: string) => api.get(`/playground/sessions/${id}`),
     updateSession: (id: string, data: any) => api.put(`/playground/sessions/${id}`, data),
     deleteSession: (id: string) => api.delete(`/playground/sessions/${id}`),
-    archiveSession: (id: string, isArchived: boolean) => 
+    archiveSession: (id: string, isArchived: boolean) =>
         api.post(`/playground/sessions/${id}/archive`, null, { params: { is_archived: isArchived } }),
     uploadDocument: (id: string, file: File) => {
         const formData = new FormData();
@@ -249,11 +291,11 @@ export const playgroundAPI = {
             headers: { 'Content-Type': 'multipart/form-data' },
         });
     },
-    removeDocument: (sessionId: string, docId: string) => 
+    removeDocument: (sessionId: string, docId: string) =>
         api.delete(`/playground/sessions/${sessionId}/documents/${docId}`),
-    addMessage: (id: string, message: any) => 
+    addMessage: (id: string, message: any) =>
         api.post(`/playground/sessions/${id}/messages`, message),
-    updateExtractedData: (id: string, data: any) => 
+    updateExtractedData: (id: string, data: any) =>
         api.put(`/playground/sessions/${id}/extracted-data`, data),
     extractData: (id: string) => api.post(`/playground/sessions/${id}/extract`),
 };

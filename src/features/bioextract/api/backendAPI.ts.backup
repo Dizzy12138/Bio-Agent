@@ -148,18 +148,16 @@ class BioExtractBackendAPI {
         page?: number;
         pageSize?: number;
     }): Promise<{ documents: Document[]; total: number; hasMore: boolean }> {
-        // 后端使用 POST /api/v1/documents/search
+        const queryParams = new URLSearchParams();
+        if (params.query) queryParams.append('query', params.query);
+        if (params.knowledgeBaseIds?.length) {
+            params.knowledgeBaseIds.forEach(id => queryParams.append('knowledge_base_ids', id));
+        }
+        queryParams.append('page', String(params.page || 1));
+        queryParams.append('pageSize', String(params.pageSize || 20));
+
         return this.request<{ documents: Document[]; total: number; hasMore: boolean }>(
-            `/documents/search`,
-            {
-                method: 'POST',
-                body: JSON.stringify({
-                    query: params.query || '',
-                    knowledgeBaseIds: params.knowledgeBaseIds || [],
-                    page: params.page || 1,
-                    pageSize: params.pageSize || 20,
-                }),
-            }
+            `/documents/search?${queryParams.toString()}`
         );
     }
 

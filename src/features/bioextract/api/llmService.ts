@@ -409,16 +409,29 @@ async function fetchOpenAIModels(baseUrl: string, apiKey: string): Promise<Model
         const data = await response.json();
         const models: ModelInfo[] = (data.data || [])
             .filter((m: { id: string }) => {
-                // 过滤掉非聊天模型（如 embedding、whisper 等）
+                // 过滤掉非聊天模型（如 embedding、whisper、tts、image 等）
                 const id = m.id.toLowerCase();
-                return id.includes('gpt') ||
-                    id.includes('chat') ||
-                    id.includes('turbo') ||
-                    id.includes('deepseek') ||
-                    id.includes('qwen') ||
-                    id.includes('llama') ||
-                    id.includes('mistral') ||
-                    id.includes('claude');
+
+                // 排除已知的非聊天模型
+                const excludePatterns = [
+                    'embedding', 'embed', 'whisper', 'tts',
+                    'dall-e', 'moderation', 'davinci', 'babbage',
+                    'ada', 'curie', 'search', 'similarity',
+                    'code-search', 'text-search', 'edit',
+                ];
+                if (excludePatterns.some(p => id.includes(p))) {
+                    return false;
+                }
+
+                // 包含已知的聊天模型系列
+                const includePatterns = [
+                    'gpt', 'chat', 'turbo',
+                    'deepseek', 'qwen', 'llama', 'mistral', 'claude',
+                    'gemini', 'gemma',
+                    'o1', 'o3', 'o4',
+                    'yi', 'glm', 'baichuan', 'moonshot',
+                ];
+                return includePatterns.some(p => id.includes(p));
             })
             .map((m: { id: string; created?: number; owned_by?: string }) => ({
                 id: m.id,

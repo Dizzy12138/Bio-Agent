@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from typing import List
-from app.models.config_db import AgentConfig, LLMProvider
+from app.models.config_db import AgentConfig, LLMProvider, SystemSettings
 from app.services.config_db import config_service
 
 router = APIRouter()
@@ -59,4 +59,12 @@ async def upsert_provider(provider: LLMProvider):
 async def delete_provider(provider_id: str):
     await config_service.delete_provider(provider_id)
     return {"status": "success"}
+
+@router.get("/config/settings", response_model=SystemSettings)
+async def get_system_settings():
+    return await config_service.get_system_settings()
+
+@router.put("/config/settings", response_model=SystemSettings)
+async def update_system_settings(settings: SystemSettings):
+    return await config_service.update_system_settings(settings)
 

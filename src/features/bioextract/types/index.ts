@@ -125,12 +125,15 @@ export interface FilterStep {
     duration?: number;          // 执行时间 (ms)
 }
 
+import type { ThinkingStep } from '../agent';
+
 // Agent 消息
 export interface AgentMessage {
     id: string;
     role: 'user' | 'agent' | 'system';
     content: string;
     timestamp: Date;
+    thinkingSteps?: ThinkingStep[];  // 本轮思考过程（每条消息独立）
     metadata?: {
         stepId?: string;
         filterResults?: PolymerCandidate[];

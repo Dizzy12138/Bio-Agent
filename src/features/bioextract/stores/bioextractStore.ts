@@ -76,7 +76,7 @@ interface BioExtractState {
 
     // 消息操作
     addUserMessage: (content: string) => void;
-    addAgentMessage: (content: string, metadata?: AgentMessage['metadata']) => void;
+    addAgentMessage: (content: string, metadata?: AgentMessage['metadata'], thinkingSteps?: ThinkingStep[]) => void;
     addSystemMessage: (content: string) => void;
 
     // Agent 调用（核心逻辑）
@@ -265,13 +265,14 @@ export const useBioExtractStore = create<BioExtractState>((set, get) => ({
         }));
     },
 
-    addAgentMessage: (content, metadata) => {
+    addAgentMessage: (content, metadata, thinkingSteps) => {
         const message: AgentMessage = {
             id: `msg-${Date.now()}`,
             role: 'agent',
             content,
             timestamp: new Date(),
             metadata,
+            thinkingSteps: thinkingSteps && thinkingSteps.length > 0 ? [...thinkingSteps] : undefined,
         };
         set(state => ({
             session: state.session ? { ...state.session, messages: [...state.session.messages, message] } : null,
@@ -353,10 +354,14 @@ export const useBioExtractStore = create<BioExtractState>((set, get) => ({
                 agentInstance: agent,
             });
 
-            // UI 添加消息
+            // UI 添加消息（附带本轮思考步骤）
+            const currentThinkingSteps = [...get().thinkingSteps];
             get().addAgentMessage(result.response, {
                 processLog: result.thinkingSteps.map(s => `[${s.type}] ${s.content}`)
-            });
+            }, currentThinkingSteps);
+
+            // 清空全局思考步骤（已附加到消息上）
+            set({ thinkingSteps: [] });
 
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : '未知错误';

@@ -8,13 +8,12 @@ import {
     ChevronRight,
     Dna,
     FileSearch,
-    Search,
-    BookOpen,
-    Atom,
-    Bug,
-    Zap // New Icon for Skills
+    Zap,
+    Network
 } from 'lucide-react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import logoImg from '../assets/logo.png';
+import { UserProfile } from './UserProfile';
 import './Sidebar.css';
 
 // 定义视图类型
@@ -25,13 +24,12 @@ export type ViewType =
     | 'bioextract'
     | 'playground'
     | 'settings'
-    | 'skills' // Added
+    | 'skills'
     | 'query'
     | 'literature'
     | 'molecular'
-    | 'microbial';
-
-
+    | 'microbial'
+    | 'knowledge-graph';
 
 // 菜单项分组配置
 interface MenuItem {
@@ -50,7 +48,8 @@ const menuGroups: MenuGroup[] = [
     {
         title: 'AI 助手',
         items: [
-            { id: 'chat', icon: <MessageSquare size={20} />, label: 'Agent 对话' },
+            // Agent 对话菜单已隐藏
+            // { id: 'chat', icon: <MessageSquare size={20} />, label: 'Agent 对话' },
             { id: 'bioextract', icon: <Dna size={20} />, label: 'BioExtract-AI', badge: 'NEW' },
             { id: 'playground', icon: <FileSearch size={20} />, label: '抽取演练场' },
         ]
@@ -58,10 +57,7 @@ const menuGroups: MenuGroup[] = [
     {
         title: '数据分析',
         items: [
-            { id: 'query', icon: <Search size={20} />, label: '交互式查询' },
-            { id: 'literature', icon: <BookOpen size={20} />, label: '文献挖掘' },
-            { id: 'molecular', icon: <Atom size={20} />, label: '分子性质' },
-            { id: 'microbial', icon: <Bug size={20} />, label: '微生物性状' },
+            { id: 'knowledge-graph', icon: <Network size={20} />, label: '知识图谱' },
         ]
     },
     {
@@ -74,11 +70,6 @@ const menuGroups: MenuGroup[] = [
         ]
     }
 ];
-
-// ... imports
-import { useNavigate, useLocation } from 'react-router-dom';
-
-// ... (interface definitions kept similar but simplified)
 
 export const Sidebar: React.FC = () => {
     const [collapsed, setCollapsed] = useState(false);
@@ -95,6 +86,7 @@ export const Sidebar: React.FC = () => {
         if (path.startsWith('/literature')) return 'literature';
         if (path.startsWith('/molecular')) return 'molecular';
         if (path.startsWith('/microbial')) return 'microbial';
+        if (path.startsWith('/knowledge-graph')) return 'knowledge-graph';
         if (path.startsWith('/knowledge')) return 'knowledge';
         if (path.startsWith('/settings')) return 'settings';
         if (path.startsWith('/skills')) return 'skills';
@@ -154,6 +146,9 @@ export const Sidebar: React.FC = () => {
                     </div>
                 ))}
             </nav>
+
+            {/* 用户信息 */}
+            <UserProfile />
 
             {/* 底部折叠按钮 */}
             <footer className="sidebar__footer">

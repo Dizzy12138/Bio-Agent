@@ -13,6 +13,7 @@ import {
     updateToolConfig,
     resetToolConfig,
     SYSTEM_MCP_TOOLS,
+    syncToolsWithBackend,
 } from '../registry';
 import type { MCPTool, MCPToolConfigField } from '../types';
 import { Power, RotateCcw, Check, Zap, Settings } from 'lucide-react';
@@ -24,6 +25,16 @@ export const MCPConfigPanel: React.FC = () => {
     const [selectedToolId, setSelectedToolId] = useState<string | null>(null);
     const [editingConfig, setEditingConfig] = useState<Record<string, unknown>>({});
     const [hasChanges, setHasChanges] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
+
+    // 组件加载时从后端同步配置
+    React.useEffect(() => {
+        syncToolsWithBackend().then(() => {
+            setTools(getAllTools());
+        }).catch(err => {
+            console.error('同步 MCP 配置失败:', err);
+        });
+    }, []);
 
     const selectedTool = tools.find(t => t.id === selectedToolId);
 
@@ -39,11 +50,16 @@ export const MCPConfigPanel: React.FC = () => {
         }
     };
 
-    const handleToggleEnabled = (toolId: string) => {
+    const handleToggleEnabled = async (toolId: string) => {
         const tool = tools.find(t => t.id === toolId);
         if (tool) {
-            updateToolConfig(toolId, tool.config, !tool.enabled);
-            setTools(getAllTools());
+            try {
+                await updateToolConfig(toolId, tool.config, !tool.enabled);
+                setTools(getAllTools());
+            } catch (error) {
+                console.error('切换工具状态失败:', error);
+                alert('操作失败，请检查网络连接');
+            }
         }
     };
 
@@ -52,24 +68,37 @@ export const MCPConfigPanel: React.FC = () => {
         setHasChanges(true);
     };
 
-    const handleSave = () => {
+    const handleSave = async () => {
         if (selectedTool) {
-            updateToolConfig(selectedTool.id, editingConfig, selectedTool.enabled);
-            setTools(getAllTools());
-            setHasChanges(false);
-            alert('配置已保存！');
+            setIsSaving(true);
+            try {
+                await updateToolConfig(selectedTool.id, editingConfig, selectedTool.enabled);
+                setTools(getAllTools());
+                setHasChanges(false);
+                alert('配置已保存到服务器！');
+            } catch (error) {
+                console.error('保存配置失败:', error);
+                alert('保存配置失败，请检查网络连接');
+            } finally {
+                setIsSaving(false);
+            }
         }
     };
 
-    const handleReset = () => {
+    const handleReset = async () => {
         if (selectedTool && confirm('确定要重置为默认配置吗？')) {
-            resetToolConfig(selectedTool.id);
-            setTools(getAllTools());
-            const defaultTool = SYSTEM_MCP_TOOLS.find(t => t.id === selectedTool.id);
-            if (defaultTool) {
-                setEditingConfig({ ...defaultTool.config });
+            try {
+                await resetToolConfig(selectedTool.id);
+                setTools(getAllTools());
+                const defaultTool = SYSTEM_MCP_TOOLS.find(t => t.id === selectedTool.id);
+                if (defaultTool) {
+                    setEditingConfig({ ...defaultTool.config });
+                }
+                setHasChanges(false);
+            } catch (error) {
+                console.error('重置配置失败:', error);
+                alert('重置失败，请检查网络连接');
             }
-            setHasChanges(false);
         }
     };
 
@@ -207,10 +236,10 @@ export const MCPConfigPanel: React.FC = () => {
                             <button
                                 className="btn btn-primary"
                                 onClick={handleSave}
-                                disabled={!hasChanges}
+                                disabled={!hasChanges || isSaving}
                             >
                                 <Check size={14} />
-                                保存配置
+                                {isSaving ? '保存中...' : '保存配置'}
                             </button>
                         </div>
                     </>

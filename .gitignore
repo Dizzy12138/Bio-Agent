@@ -1,1 +1,13 @@
 node_modules
+dist
+backend/venv
+backend/__pycache__
+backend/**/__pycache__
+backend/.coverage
+backend/.env
+backend/logs
+backend/*.log
+*.log
+.backend.pid
+*.pyc
+.DS_Store

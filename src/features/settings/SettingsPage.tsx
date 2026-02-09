@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Button, useToast, Modal } from '../../components/common';
-import { Plus, Trash2, Bot, Zap, Palette, Server, Shield, Settings } from 'lucide-react';
+import { Plus, Trash2, Bot, Zap, Palette, Server, Shield, Settings, Users, MessageSquare, Eye, EyeOff, CheckCircle, XCircle, Loader, Star } from 'lucide-react';
 import { AgentConfigPanel } from '../experts';
 import { MCPConfigPanel } from '../mcp';
+import { UserManagement, ConversationManager } from './components';
 import './SettingsPage.css';
 
 import {
@@ -22,12 +23,18 @@ interface LLMProvider {
     isEnabled: boolean;
 }
 
+interface SystemSettingsData {
+    id: string;
+    defaultProviderId: string | null;
+    defaultModel: string | null;
+}
+
 export const SettingsPage: React.FC = () => {
     const { success, error } = useToast();
 
     // Load active tab from localStorage or default to 'agents'
-    const [activeTab, setActiveTab] = useState<'agents' | 'mcp' | 'models' | 'theme'>(() => {
-        return (localStorage.getItem('settings_active_tab') as 'agents' | 'mcp' | 'models' | 'theme') || 'agents';
+    const [activeTab, setActiveTab] = useState<'agents' | 'mcp' | 'models' | 'users' | 'conversations' | 'theme'>(() => {
+        return (localStorage.getItem('settings_active_tab') as any) || 'agents';
     });
 
     // Save active tab to localStorage whenever it changes
@@ -40,9 +47,19 @@ export const SettingsPage: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const [showAddModal, setShowAddModal] = useState(false);
 
+    // System Settings (default model)
+    const [systemSettings, setSystemSettings] = useState<SystemSettingsData>({
+        id: 'system_settings',
+        defaultProviderId: null,
+        defaultModel: null,
+    });
+
     useEffect(() => {
-        fetchProviders();
-    }, []);
+        if (activeTab === 'models') {
+            fetchProviders();
+            fetchSystemSettings();
+        }
+    }, [activeTab]);
 
     const fetchProviders = async () => {
         setLoading(true);
@@ -56,6 +73,40 @@ export const SettingsPage: React.FC = () => {
             console.error(e);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const fetchSystemSettings = async () => {
+        try {
+            const res = await fetch('/api/v1/config/settings');
+            if (res.ok) {
+                const data = await res.json();
+                setSystemSettings(data);
+            }
+        } catch (e) {
+            console.error(e);
+        }
+    };
+
+    const saveDefaultModel = async (providerId: string, model: string) => {
+        try {
+            const res = await fetch('/api/v1/config/settings', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    defaultProviderId: providerId,
+                    defaultModel: model,
+                }),
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setSystemSettings(data);
+                success('默认模型已更新');
+            } else {
+                error('保存失败');
+            }
+        } catch {
+            error('网络错误');
         }
     };
 
@@ -80,7 +131,6 @@ export const SettingsPage: React.FC = () => {
             const timer = setTimeout(loadModels, 500);
             return () => clearTimeout(timer);
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps -- loadModels 依赖于 config，不需要作为依赖
     }, [config.apiKey, config.provider, config.baseUrl, showAddModal]);
 
     const loadModels = async () => {
@@ -151,6 +201,7 @@ export const SettingsPage: React.FC = () => {
 
             if (res.ok) {
                 setShowAddModal(false);
+                resetModalState();
                 fetchProviders();
                 success('添加模型服务成功');
             } else {
@@ -161,6 +212,22 @@ export const SettingsPage: React.FC = () => {
         }
     };
 
+    const resetModalState = () => {
+        setConfig({
+            provider: 'openai',
+            apiKey: '',
+            baseUrl: '',
+            model: '',
+            temperature: 0.7,
+            maxTokens: 4096,
+        });
+        setShowApiKey(false);
+        setTesting(false);
+        setTestResult(null);
+        setAvailableModels([]);
+        setLoadingModels(false);
+    };
+
     const handleDelete = async (id: string) => {
         if (!confirm('确定删除该配置吗？')) return;
 
@@ -168,6 +235,11 @@ export const SettingsPage: React.FC = () => {
             await fetch(`/api/v1/config/providers/${id}`, { method: 'DELETE' });
             fetchProviders();
             success('删除成功');
+
+            // If deleted provider was the default, clear default
+            if (systemSettings.defaultProviderId === id) {
+                saveDefaultModel('', '');
+            }
         } catch (err) {
             console.error(err);
             error('删除失败');
@@ -194,6 +266,18 @@ export const SettingsPage: React.FC = () => {
             icon: <Server size={20} />
         },
         {
+            id: 'users',
+            label: '用户管理',
+            desc: '管理系统用户和权限',
+            icon: <Users size={20} />
+        },
+        {
+            id: 'conversations',
+            label: '对话记录',
+            desc: '查看和管理所有对话',
+            icon: <MessageSquare size={20} />
+        },
+        {
             id: 'theme',
             label: '主题设置',
             desc: '个性化界面外观',
@@ -211,6 +295,11 @@ export const SettingsPage: React.FC = () => {
         ) : '设置';
     };
 
+    // Build flat list of all models grouped by provider for default model selector
+    const allProviderModels = providers
+        .filter(p => p.isEnabled)
+        .flatMap(p => p.models.map(m => ({ providerId: p.id, providerName: p.name, model: m })));
+
     return (
         <div className="settings-manager">
             {/* Sidebar Navigation */}
@@ -227,7 +316,7 @@ export const SettingsPage: React.FC = () => {
                         <div
                             key={item.id}
                             className={`settings-nav-item ${activeTab === item.id ? 'active' : ''}`}
-                            onClick={() => setActiveTab(item.id)}
+                            onClick={() => setActiveTab(item.id as any)}
                         >
                             <div className="settings-nav-icon">
                                 {item.icon}
@@ -248,7 +337,7 @@ export const SettingsPage: React.FC = () => {
                         {getActiveTitle()}
                     </h1>
                     {activeTab === 'models' && (
-                        <Button onClick={() => setShowAddModal(true)} leftIcon={<Plus size={16} />}>
+                        <Button onClick={() => { resetModalState(); setShowAddModal(true); }} leftIcon={<Plus size={16} />}>
                             添加服务
                         </Button>
                     )}
@@ -259,113 +348,305 @@ export const SettingsPage: React.FC = () => {
 
                     {activeTab === 'mcp' && <MCPConfigPanel />}
 
+                    {activeTab === 'users' && <UserManagement />}
+
+                    {activeTab === 'conversations' && <ConversationManager />}
+
                     {activeTab === 'models' && (
-                        <div className="space-y-4 max-w-3xl">
+                        <div style={{ maxWidth: '800px' }}>
+                            {/* Default Model Selector */}
+                            {providers.length > 0 && (
+                                <div className="settings-default-model-section" style={{
+                                    marginBottom: '24px',
+                                    padding: '20px',
+                                    background: 'linear-gradient(135deg, var(--primary-50, #eff6ff) 0%, var(--bg-secondary, #f8fafc) 100%)',
+                                    borderRadius: '12px',
+                                    border: '1px solid var(--primary-200, #bfdbfe)',
+                                }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                                        <Star size={18} style={{ color: 'var(--primary-500, #3b82f6)' }} />
+                                        <span style={{ fontWeight: 600, fontSize: '14px', color: 'var(--text-primary, #1e293b)' }}>
+                                            默认模型
+                                        </span>
+                                        <span style={{ fontSize: '12px', color: 'var(--text-muted, #94a3b8)' }}>
+                                            (聊天未指定模型时使用)
+                                        </span>
+                                    </div>
+                                    <select
+                                        value={
+                                            systemSettings.defaultProviderId && systemSettings.defaultModel
+                                                ? `${systemSettings.defaultProviderId}|${systemSettings.defaultModel}`
+                                                : ''
+                                        }
+                                        onChange={(e) => {
+                                            const val = e.target.value;
+                                            if (!val) {
+                                                saveDefaultModel('', '');
+                                            } else {
+                                                const [pid, ...modelParts] = val.split('|');
+                                                saveDefaultModel(pid, modelParts.join('|'));
+                                            }
+                                        }}
+                                        style={{
+                                            width: '100%',
+                                            padding: '10px 14px',
+                                            borderRadius: '8px',
+                                            border: '1px solid var(--border-color, #e2e8f0)',
+                                            background: 'white',
+                                            fontSize: '14px',
+                                            color: 'var(--text-primary, #1e293b)',
+                                            cursor: 'pointer',
+                                            outline: 'none',
+                                        }}
+                                    >
+                                        <option value="">未设置（使用 gpt-3.5-turbo 兜底）</option>
+                                        {allProviderModels.map(item => (
+                                            <option key={`${item.providerId}|${item.model}`} value={`${item.providerId}|${item.model}`}>
+                                                {item.providerName} / {item.model}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                            )}
+
+                            {/* Provider List */}
                             {loading ? (
-                                <div className="flex justify-center py-12">
-                                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                                <div style={{ display: 'flex', justifyContent: 'center', padding: '48px 0' }}>
+                                    <Loader size={32} style={{ animation: 'spin 1s linear infinite', color: 'var(--primary-500, #3b82f6)' }} />
                                 </div>
                             ) : providers.length === 0 ? (
-                                <div className="text-center py-16 bg-gray-50 rounded-xl border border-dashed border-gray-200">
-                                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-400">
+                                <div style={{
+                                    textAlign: 'center',
+                                    padding: '64px 24px',
+                                    background: 'var(--bg-secondary, #f8fafc)',
+                                    borderRadius: '12px',
+                                    border: '2px dashed var(--border-color, #e2e8f0)',
+                                }}>
+                                    <div style={{
+                                        width: '64px', height: '64px',
+                                        background: 'var(--bg-tertiary, #f1f5f9)',
+                                        borderRadius: '50%',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        margin: '0 auto 16px',
+                                        color: 'var(--text-muted, #94a3b8)',
+                                    }}>
                                         <Server size={32} />
                                     </div>
-                                    <h3 className="text-lg font-medium text-gray-900 mb-1">暂无模型服务</h3>
-                                    <p className="text-gray-500 mb-6">配置 LLM Provider 以开启 AI 能力</p>
-                                    <Button onClick={() => setShowAddModal(true)} leftIcon={<Plus size={16} />} variant="secondary">
+                                    <h3 style={{ fontSize: '18px', fontWeight: 600, color: 'var(--text-primary, #1e293b)', marginBottom: '4px' }}>暂无模型服务</h3>
+                                    <p style={{ color: 'var(--text-muted, #94a3b8)', marginBottom: '24px' }}>配置 LLM Provider 以开启 AI 能力</p>
+                                    <Button onClick={() => { resetModalState(); setShowAddModal(true); }} leftIcon={<Plus size={16} />} variant="secondary">
                                         添加服务
                                     </Button>
                                 </div>
                             ) : (
-                                <div className="grid gap-4">
-                                    {providers.map(p => (
-                                        <div key={p.id} className="group bg-white border border-gray-200 rounded-xl p-5 hover:shadow-md hover:border-blue-200 transition-all">
-                                            <div className="flex justify-between items-start">
-                                                <div className="flex items-start gap-4">
-                                                    <div className="w-12 h-12 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600 shrink-0">
-                                                        <Server size={24} />
-                                                    </div>
-                                                    <div>
-                                                        <div className="flex items-center gap-2 mb-1">
-                                                            <h3 className="font-semibold text-lg text-gray-900">{p.name}</h3>
-                                                            {p.isEnabled && (
-                                                                <span className="px-2 py-0.5 bg-green-50 text-green-700 text-xs font-medium rounded-full border border-green-100">
-                                                                    已启用
-                                                                </span>
+                                <div style={{ display: 'grid', gap: '16px' }}>
+                                    {providers.map(p => {
+                                        const isDefault = systemSettings.defaultProviderId === p.id;
+                                        return (
+                                            <div key={p.id} style={{
+                                                background: 'var(--bg-primary, white)',
+                                                border: `1px solid ${isDefault ? 'var(--primary-300, #93c5fd)' : 'var(--border-color, #e2e8f0)'}`,
+                                                borderRadius: '12px',
+                                                padding: '20px',
+                                                transition: 'all 0.2s ease',
+                                            }}>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
+                                                        <div style={{
+                                                            width: '48px', height: '48px',
+                                                            borderRadius: '10px',
+                                                            background: isDefault ? 'var(--primary-100, #dbeafe)' : 'var(--primary-50, #eff6ff)',
+                                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                            color: 'var(--primary-600, #2563eb)',
+                                                            flexShrink: 0,
+                                                        }}>
+                                                            <Server size={24} />
+                                                        </div>
+                                                        <div>
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                                                                <h3 style={{ fontWeight: 600, fontSize: '16px', color: 'var(--text-primary, #1e293b)', margin: 0 }}>{p.name}</h3>
+                                                                {p.isEnabled && (
+                                                                    <span style={{
+                                                                        padding: '2px 8px',
+                                                                        background: 'var(--success-50, #f0fdf4)',
+                                                                        color: 'var(--success-700, #15803d)',
+                                                                        fontSize: '11px',
+                                                                        fontWeight: 500,
+                                                                        borderRadius: '9999px',
+                                                                        border: '1px solid var(--success-100, #dcfce7)',
+                                                                    }}>
+                                                                        已启用
+                                                                    </span>
+                                                                )}
+                                                                {isDefault && (
+                                                                    <span style={{
+                                                                        padding: '2px 8px',
+                                                                        background: 'var(--primary-50, #eff6ff)',
+                                                                        color: 'var(--primary-700, #1d4ed8)',
+                                                                        fontSize: '11px',
+                                                                        fontWeight: 500,
+                                                                        borderRadius: '9999px',
+                                                                        border: '1px solid var(--primary-100, #dbeafe)',
+                                                                    }}>
+                                                                        ⭐ 默认
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: 'var(--text-muted, #94a3b8)' }}>
+                                                                <span style={{
+                                                                    background: 'var(--bg-tertiary, #f1f5f9)',
+                                                                    padding: '2px 8px',
+                                                                    borderRadius: '4px',
+                                                                    fontSize: '12px',
+                                                                    fontFamily: 'monospace',
+                                                                }}>{p.baseUrl}</span>
+                                                            </div>
+                                                            {p.models && p.models.length > 0 && (
+                                                                <div style={{ marginTop: '8px', display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                                                                    {p.models.slice(0, 6).map(m => (
+                                                                        <span key={m} style={{
+                                                                            fontSize: '11px',
+                                                                            padding: '2px 6px',
+                                                                            borderRadius: '4px',
+                                                                            background: 'var(--bg-secondary, #f8fafc)',
+                                                                            color: 'var(--text-secondary, #64748b)',
+                                                                            border: '1px solid var(--border-color, #e2e8f0)',
+                                                                        }}>{m}</span>
+                                                                    ))}
+                                                                    {p.models.length > 6 && (
+                                                                        <span style={{
+                                                                            fontSize: '11px',
+                                                                            padding: '2px 6px',
+                                                                            color: 'var(--text-muted, #94a3b8)',
+                                                                        }}>+{p.models.length - 6} more</span>
+                                                                    )}
+                                                                </div>
                                                             )}
                                                         </div>
-                                                        <div className="flex items-center gap-2 text-sm text-gray-500 font-mono">
-                                                            <span className="bg-gray-100 px-2 py-0.5 rounded text-xs">{p.baseUrl}</span>
-                                                        </div>
                                                     </div>
+                                                    <button
+                                                        onClick={() => handleDelete(p.id)}
+                                                        style={{
+                                                            padding: '8px',
+                                                            color: 'var(--text-muted, #94a3b8)',
+                                                            background: 'none',
+                                                            border: 'none',
+                                                            borderRadius: '8px',
+                                                            cursor: 'pointer',
+                                                            transition: 'all 0.15s',
+                                                        }}
+                                                        title="删除配置"
+                                                    >
+                                                        <Trash2 size={18} />
+                                                    </button>
                                                 </div>
-                                                <button
-                                                    onClick={() => handleDelete(p.id)}
-                                                    className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                                                    title="删除配置"
-                                                >
-                                                    <Trash2 size={18} />
-                                                </button>
-                                            </div>
-                                            <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between text-xs text-gray-400">
-                                                <div className="font-mono flex items-center gap-2">
-                                                    <Shield size={12} />
-                                                    KEY: <span className="text-gray-600 font-medium">{p.apiKey}</span>
+                                                <div style={{
+                                                    marginTop: '16px', paddingTop: '12px',
+                                                    borderTop: '1px solid var(--border-color, #f1f5f9)',
+                                                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                                                    fontSize: '12px', color: 'var(--text-muted, #94a3b8)',
+                                                }}>
+                                                    <div style={{ fontFamily: 'monospace', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                        <Shield size={12} />
+                                                        KEY: <span style={{ color: 'var(--text-secondary, #64748b)', fontWeight: 500 }}>
+                                                            {p.apiKey ? `${p.apiKey.substring(0, 20)}...` : '未设置'}
+                                                        </span>
+                                                    </div>
+                                                    <div style={{ opacity: 0.5 }}>ID: {p.id}</div>
                                                 </div>
-                                                <div className="opacity-50">ID: {p.id}</div>
                                             </div>
-                                        </div>
-                                    ))}
+                                        );
+                                    })}
                                 </div>
                             )}
                         </div>
                     )}
 
                     {activeTab === 'theme' && (
-                        <div className="h-full flex flex-col items-center justify-center text-gray-400 p-12 text-center">
-                            <div className="w-24 h-24 bg-gray-50 rounded-full flex items-center justify-center mb-6">
-                                <Palette size={40} className="text-gray-300" />
+                        <div style={{
+                            height: '100%', display: 'flex', flexDirection: 'column',
+                            alignItems: 'center', justifyContent: 'center',
+                            color: 'var(--text-muted, #94a3b8)', padding: '48px', textAlign: 'center',
+                        }}>
+                            <div style={{
+                                width: '96px', height: '96px',
+                                background: 'var(--bg-secondary, #f8fafc)',
+                                borderRadius: '50%',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                marginBottom: '24px',
+                            }}>
+                                <Palette size={40} style={{ color: 'var(--text-muted, #cbd5e1)' }} />
                             </div>
-                            <h3 className="text-lg font-medium text-gray-900 mb-2">主题设置</h3>
-                            <p className="max-w-xs mx-auto">个性化主题配置正在开发中...</p>
+                            <h3 style={{ fontSize: '18px', fontWeight: 600, color: 'var(--text-primary, #1e293b)', marginBottom: '8px' }}>主题设置</h3>
+                            <p style={{ maxWidth: '320px', margin: '0 auto' }}>个性化主题配置正在开发中...</p>
                         </div>
                     )}
                 </div>
             </main>
 
+            {/* ==================== 添加模型服务模态框 ==================== */}
             <Modal
                 isOpen={showAddModal}
-                onClose={() => setShowAddModal(false)}
+                onClose={() => { setShowAddModal(false); resetModalState(); }}
                 title="添加模型服务"
-                size="2xl"
+                size="lg"
                 footer={
                     <>
                         <Button
                             variant="secondary"
+                            onClick={() => { setShowAddModal(false); resetModalState(); }}
+                        >
+                            取消
+                        </Button>
+                        <Button
                             onClick={handleTestConnection}
-                            disabled={testing || !config.apiKey}
+                            disabled={!config.apiKey || testing}
+                            variant="secondary"
+                            leftIcon={testing ? <Loader size={14} style={{ animation: 'spin 1s linear infinite' }} /> : undefined}
                         >
                             {testing ? '测试中...' : '测试连接'}
                         </Button>
-                        <Button variant="secondary" onClick={() => setShowAddModal(false)}>取消</Button>
-                        <Button onClick={handleAdd} disabled={!config.apiKey}>保存配置</Button>
+                        <Button
+                            onClick={handleAdd}
+                            disabled={!config.apiKey}
+                        >
+                            确认添加
+                        </Button>
                     </>
                 }
             >
-                <div className="space-y-6">
-                    {/* Provider Selection */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                    {/* Provider Type */}
                     <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-2">模型提供商</label>
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                        <label style={{ display: 'block', fontWeight: 600, fontSize: '13px', color: 'var(--text-primary, #1e293b)', marginBottom: '6px' }}>
+                            服务商类型
+                        </label>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '8px' }}>
                             {LLM_PROVIDERS.map(p => (
                                 <button
                                     key={p.id}
-                                    onClick={() => setConfig(prev => ({ ...prev, provider: p.id as LLMConfig['provider'], baseUrl: p.defaultBaseUrl }))}
-                                    className={`px-4 py-3 rounded-lg border text-sm font-medium transition-all
-                                        ${config.provider === p.id
-                                            ? 'border-blue-500 bg-blue-50 text-blue-700 ring-2 ring-blue-500 ring-offset-1'
-                                            : 'border-gray-200 hover:border-blue-200 hover:bg-gray-50 text-gray-700'
-                                        }`}
+                                    onClick={() => {
+                                        setConfig(prev => ({
+                                            ...prev,
+                                            provider: p.id as LLMConfig['provider'],
+                                            baseUrl: p.defaultBaseUrl,
+                                            model: '',
+                                        }));
+                                        setAvailableModels([]);
+                                        setTestResult(null);
+                                    }}
+                                    style={{
+                                        padding: '10px 12px',
+                                        borderRadius: '8px',
+                                        border: `2px solid ${config.provider === p.id ? 'var(--primary-500, #3b82f6)' : 'var(--border-color, #e2e8f0)'}`,
+                                        background: config.provider === p.id ? 'var(--primary-50, #eff6ff)' : 'white',
+                                        color: config.provider === p.id ? 'var(--primary-700, #1d4ed8)' : 'var(--text-secondary, #64748b)',
+                                        fontWeight: config.provider === p.id ? 600 : 400,
+                                        fontSize: '13px',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.15s ease',
+                                        textAlign: 'center',
+                                    }}
                                 >
                                     {p.name}
                                 </button>
@@ -373,74 +654,136 @@ export const SettingsPage: React.FC = () => {
                         </div>
                     </div>
 
-                    {/* API Key */}
-                    <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-1.5">API Key</label>
-                        <div className="relative">
-                            <input
-                                type={showApiKey ? 'text' : 'password'}
-                                className="w-full border border-gray-300 rounded-lg p-2.5 pr-10 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all font-mono text-sm"
-                                placeholder="sk-..."
-                                value={config.apiKey}
-                                onChange={e => setConfig(prev => ({ ...prev, apiKey: e.target.value }))}
-                            />
-                            <button
-                                type="button"
-                                onClick={() => setShowApiKey(!showApiKey)}
-                                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                            >
-                                {showApiKey ? '🙈' : '👁️'}
-                            </button>
-                        </div>
-                        <p className="text-xs text-gray-500 mt-1.5">输入 Key 后将自动获取可用模型列表</p>
-                    </div>
-
                     {/* Base URL */}
                     <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-1.5">Base URL</label>
+                        <label style={{ display: 'block', fontWeight: 600, fontSize: '13px', color: 'var(--text-primary, #1e293b)', marginBottom: '6px' }}>
+                            API Base URL
+                        </label>
                         <input
-                            className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all font-mono text-sm"
+                            type="text"
                             value={config.baseUrl}
-                            onChange={e => setConfig(prev => ({ ...prev, baseUrl: e.target.value }))}
-                            placeholder="https://api.openai.com/v1"
+                            onChange={(e) => setConfig(prev => ({ ...prev, baseUrl: e.target.value }))}
+                            placeholder={LLM_PROVIDERS.find(p => p.id === config.provider)?.defaultBaseUrl || 'https://api.example.com/v1'}
+                            style={{
+                                width: '100%',
+                                padding: '10px 14px',
+                                borderRadius: '8px',
+                                border: '1px solid var(--border-color, #e2e8f0)',
+                                fontSize: '13px',
+                                fontFamily: 'monospace',
+                                outline: 'none',
+                                boxSizing: 'border-box',
+                            }}
                         />
+                        <p style={{ fontSize: '11px', color: 'var(--text-muted, #94a3b8)', marginTop: '4px' }}>
+                            第三方 API 请填写对应的 Base URL（如 https://api.deepseek.com/v1）
+                        </p>
+                    </div>
+
+                    {/* API Key */}
+                    <div>
+                        <label style={{ display: 'block', fontWeight: 600, fontSize: '13px', color: 'var(--text-primary, #1e293b)', marginBottom: '6px' }}>
+                            API Key
+                        </label>
+                        <div style={{ position: 'relative' }}>
+                            <input
+                                type={showApiKey ? 'text' : 'password'}
+                                value={config.apiKey}
+                                onChange={(e) => {
+                                    setConfig(prev => ({ ...prev, apiKey: e.target.value }));
+                                    setTestResult(null);
+                                }}
+                                placeholder="sk-..."
+                                style={{
+                                    width: '100%',
+                                    padding: '10px 42px 10px 14px',
+                                    borderRadius: '8px',
+                                    border: '1px solid var(--border-color, #e2e8f0)',
+                                    fontSize: '13px',
+                                    fontFamily: 'monospace',
+                                    outline: 'none',
+                                    boxSizing: 'border-box',
+                                }}
+                            />
+                            <button
+                                onClick={() => setShowApiKey(!showApiKey)}
+                                style={{
+                                    position: 'absolute',
+                                    right: '8px',
+                                    top: '50%',
+                                    transform: 'translateY(-50%)',
+                                    padding: '4px',
+                                    background: 'none',
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    color: 'var(--text-muted, #94a3b8)',
+                                }}
+                            >
+                                {showApiKey ? <EyeOff size={16} /> : <Eye size={16} />}
+                            </button>
+                        </div>
                     </div>
 
                     {/* Model Selection */}
                     <div>
-                        <div className="flex justify-between items-center mb-1.5">
-                            <label className="block text-sm font-bold text-gray-700">默认模型</label>
-                            {loadingModels && <span className="text-xs text-blue-500 animate-pulse">正在获取列表...</span>}
-                        </div>
+                        <label style={{ display: 'block', fontWeight: 600, fontSize: '13px', color: 'var(--text-primary, #1e293b)', marginBottom: '6px' }}>
+                            可用模型
+                            {loadingModels && (
+                                <span style={{ marginLeft: '8px', fontWeight: 400, color: 'var(--text-muted, #94a3b8)' }}>
+                                    <Loader size={12} style={{ display: 'inline', animation: 'spin 1s linear infinite', verticalAlign: 'middle', marginRight: '4px' }} />
+                                    加载中...
+                                </span>
+                            )}
+                        </label>
                         {availableModels.length > 0 ? (
-                            <div className="relative">
-                                <select
-                                    className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white appearance-none"
-                                    value={config.model}
-                                    onChange={e => setConfig(prev => ({ ...prev, model: e.target.value }))}
-                                >
-                                    {availableModels.map(m => (
-                                        <option key={m.id} value={m.id}>
-                                            {m.name} {m.contextLength ? `(${Math.round(m.contextLength / 1024)}k)` : ''}
-                                        </option>
-                                    ))}
-                                </select>
-                                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
-                                    ▼
-                                </div>
-                            </div>
-                        ) : (
-                            <input
-                                className="w-full border border-gray-300 rounded-lg p-2.5 outline-none"
+                            <select
                                 value={config.model}
-                                onChange={e => setConfig(prev => ({ ...prev, model: e.target.value }))}
-                                placeholder="输入模型名称..."
-                            />
+                                onChange={(e) => setConfig(prev => ({ ...prev, model: e.target.value }))}
+                                style={{
+                                    width: '100%',
+                                    padding: '10px 14px',
+                                    borderRadius: '8px',
+                                    border: '1px solid var(--border-color, #e2e8f0)',
+                                    fontSize: '13px',
+                                    outline: 'none',
+                                    boxSizing: 'border-box',
+                                }}
+                            >
+                                {availableModels.map(m => (
+                                    <option key={m.id} value={m.id}>
+                                        {m.name}{m.contextLength ? ` (${Math.round(m.contextLength / 1024)}K ctx)` : ''}
+                                    </option>
+                                ))}
+                            </select>
+                        ) : (
+                            <div style={{
+                                padding: '16px',
+                                borderRadius: '8px',
+                                background: 'var(--bg-secondary, #f8fafc)',
+                                border: '1px dashed var(--border-color, #e2e8f0)',
+                                textAlign: 'center',
+                                color: 'var(--text-muted, #94a3b8)',
+                                fontSize: '13px',
+                            }}>
+                                {config.apiKey ? '输入 API Key 后自动加载模型列表...' : '请先输入 API Key'}
+                            </div>
                         )}
                     </div>
 
+                    {/* Test Result */}
                     {testResult && (
-                        <div className={`p-3 rounded-lg text-sm ${testResult.success ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>
+                        <div style={{
+                            padding: '12px 16px',
+                            borderRadius: '8px',
+                            background: testResult.success ? 'var(--success-50, #f0fdf4)' : '#fef2f2',
+                            border: `1px solid ${testResult.success ? 'var(--success-200, #bbf7d0)' : '#fecaca'}`,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            fontSize: '13px',
+                            color: testResult.success ? 'var(--success-700, #15803d)' : '#dc2626',
+                        }}>
+                            {testResult.success ? <CheckCircle size={16} /> : <XCircle size={16} />}
                             {testResult.message}
                         </div>
                     )}

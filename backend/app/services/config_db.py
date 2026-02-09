@@ -1,5 +1,5 @@
 from app.db.mongo import mongodb
-from app.models.config_db import AgentConfig, LLMProvider, MCPConfig, PromptTemplate
+from app.models.config_db import AgentConfig, LLMProvider, MCPConfig, PromptTemplate, SystemSettings
 from typing import List, Optional
 from datetime import datetime
 from uuid import uuid4
@@ -51,6 +51,7 @@ class ConfigService:
     def col_providers(self): return mongodb.db["llm_providers"]
     def col_prompts(self): return mongodb.db["prompts"]
     def col_mcp(self): return mongodb.db["mcp_configs"]
+    def col_settings(self): return mongodb.db["system_settings"]
 
     async def init_defaults(self):
         try:
@@ -95,5 +96,53 @@ class ConfigService:
     async def get_prompt(self, key: str) -> Optional[PromptTemplate]:
         doc = await self.col_prompts().find_one({"key": key})
         return PromptTemplate(**doc) if doc else None
+
+    # --- System Settings ---
+    async def get_system_settings(self) -> SystemSettings:
+        doc = await self.col_settings().find_one({"id": "system_settings"})
+        if doc:
+            return SystemSettings(**doc)
+        return SystemSettings()
+
+    async def update_system_settings(self, settings: SystemSettings) -> SystemSettings:
+        settings.id = "system_settings"
+        settings.updatedAt = datetime.now()
+        await self.col_settings().replace_one(
+            {"id": "system_settings"},
+            settings.model_dump(),
+            upsert=True
+        )
+        return settings
+
+    async def get_default_provider_config(self) -> Optional[dict]:
+        """Returns resolved default provider config for LLM routing.
+        Returns dict with keys: api_key, base_url, provider_name, model
+        """
+        sys_settings = await self.get_system_settings()
+        if sys_settings.defaultProviderId:
+            provider = await self.get_provider(sys_settings.defaultProviderId)
+            if provider and provider.isEnabled and provider.apiKey:
+                return {
+                    "api_key": provider.apiKey,
+                    "base_url": provider.baseUrl,
+                    "provider_name": provider.name,
+                    "model": sys_settings.defaultModel or (provider.models[0] if provider.models else None),
+                    "provider_id": provider.id,
+                }
+        return None
+
+    async def find_provider_for_model(self, model: str) -> Optional[dict]:
+        """Find the provider that contains the given model name."""
+        providers = await self.get_all_providers()
+        for p in providers:
+            if p.isEnabled and model in p.models and p.apiKey:
+                return {
+                    "api_key": p.apiKey,
+                    "base_url": p.baseUrl,
+                    "provider_name": p.name,
+                    "model": model,
+                    "provider_id": p.id,
+                }
+        return None
 
 config_service = ConfigService()

@@ -11,6 +11,8 @@ export interface StreamEvent {
     content?: string;
     conversationId?: string; // Backend might return this to sync IDs
     error?: string;
+    type?: string;  // e.g. 'title_generated'
+    title?: string; // auto-generated conversation title
 }
 
 export const chatAPI = {
@@ -21,7 +23,8 @@ export const chatAPI = {
         params: ChatCompletionRequest,
         onChunk: (chunk: string) => void,
         onDone?: () => void,
-        onError?: (err: Error) => void
+        onError?: (err: Error) => void,
+        onTitleGenerated?: (title: string, conversationId: string) => void
     ): Promise<void> {
         try {
             const response = await fetch('/api/v1/chat/completions', {
@@ -67,6 +70,9 @@ export const chatAPI = {
                             const parsed: StreamEvent = JSON.parse(data);
                             if (parsed.content) {
                                 onChunk(parsed.content);
+                            }
+                            if (parsed.type === 'title_generated' && parsed.title && onTitleGenerated) {
+                                onTitleGenerated(parsed.title, parsed.conversationId || '');
                             }
                             if (parsed.error) {
                                 if (onError) onError(new Error(parsed.error));

@@ -1,0 +1,2 @@
+export { KnowledgeGraphPage } from './KnowledgeGraphPage';
+

@@ -3,22 +3,29 @@
 """
 
 from app.db.mongo import mongodb
+from app.core.config import settings
 from app.models.user import User, UserCreate, UserLogin, Token, TokenData, UserRole
 from typing import Optional
 from datetime import datetime, timedelta, timezone
 from passlib.context import CryptContext
 import jwt
 from uuid import uuid4
-import os
+import re
+import logging
+
+logger = logging.getLogger(__name__)
 
 # 密码加密上下文
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-# JWT配置
-SECRET_KEY = os.getenv("SECRET_KEY", "your-secret-key-change-in-production")
+# JWT配置 — 从统一配置读取
+SECRET_KEY = settings.SECRET_KEY
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24  # 24小时
 REFRESH_TOKEN_EXPIRE_DAYS = 30  # 30天
+
+# 密码复杂度正则：至少 8 位，包含大写、小写、数字
+_PASSWORD_PATTERN = re.compile(r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$')
 
 class AuthService:
     def collection(self):
@@ -87,8 +94,22 @@ class AuthService:
             users.append(User(**doc))
         return users
     
+    @staticmethod
+    def validate_password_strength(password: str) -> None:
+        """
+        验证密码复杂度。
+        要求：≥8 位，至少包含一个大写字母、一个小写字母和一个数字。
+        """
+        if not _PASSWORD_PATTERN.match(password):
+            raise ValueError(
+                "密码强度不足：至少 8 位，且必须包含大写字母、小写字母和数字"
+            )
+
     async def create_user(self, user_create: UserCreate) -> User:
         """创建新用户"""
+        # 密码强度检查
+        self.validate_password_strength(user_create.password)
+        
         # 检查用户名是否已存在
         existing_user = await self.get_user_by_username(user_create.username)
         if existing_user:
@@ -164,15 +185,16 @@ class AuthService:
         return await self.create_tokens(user)
     
     async def init_default_admin(self):
-        """初始化默认管理员账户"""
+        """初始化默认管理员账户（密码从 DEFAULT_ADMIN_PASSWORD 环境变量读取）"""
         try:
             admin = await self.get_user_by_username("admin")
             if not admin:
+                admin_password = settings.DEFAULT_ADMIN_PASSWORD
                 admin_user = User(
                     id="user-admin",
                     username="admin",
                     email="admin@example.com",
-                    hashed_password=self.get_password_hash("admin123"),
+                    hashed_password=self.get_password_hash(admin_password),
                     full_name="系统管理员",
                     role=UserRole.ADMIN,
                     is_active=True,
@@ -181,8 +203,8 @@ class AuthService:
                     updated_at=datetime.now()
                 )
                 await self.collection().insert_one(admin_user.model_dump())
-                print("✓ Default admin user created (username: admin, password: admin123)")
+                logger.info("✓ Default admin user created (username: admin)")
         except Exception as e:
-            print(f"Init default admin skipped: {e}")
+            logger.warning(f"Init default admin skipped: {e}")
 
 auth_service = AuthService()

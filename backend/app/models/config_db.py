@@ -41,3 +41,9 @@ class MCPConfig(BaseModel):
     env: Dict[str, str] = {}
     isEnabled: bool = False
     createdAt: datetime = datetime.now()
+
+class SystemSettings(BaseModel):
+    id: str = "system_settings"
+    defaultProviderId: Optional[str] = None
+    defaultModel: Optional[str] = None
+    updatedAt: datetime = datetime.now()

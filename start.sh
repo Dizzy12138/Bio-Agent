@@ -114,6 +114,13 @@ init_database() {
     log_success "Database initialized"
 }
 
+# 计算最优 worker 数
+get_workers() {
+    local cpus=$(nproc 2>/dev/null || echo 2)
+    local workers=$((cpus > 4 ? 4 : cpus < 2 ? 2 : cpus))
+    echo $workers
+}
+
 # 启动后端
 start_backend() {
     log_info "Starting backend server..."
@@ -133,9 +140,17 @@ start_backend() {
         pip install -r requirements.txt
     fi
     
-    # 启动服务
-    log_info "Backend running on http://localhost:8001"
-    python -m uvicorn app.main:app --host 0.0.0.0 --port 8001 --reload
+    local WORKERS=$(get_workers)
+    
+    # 启动服务 (多 worker + 连接优化)
+    log_info "Backend running on http://localhost:8001 (workers: $WORKERS)"
+    python -m uvicorn app.main:app \
+        --host 0.0.0.0 \
+        --port 8001 \
+        --workers "$WORKERS" \
+        --timeout-keep-alive 30 \
+        --limit-concurrency 100 \
+        --log-level info
 }
 
 # 启动前端
@@ -162,6 +177,9 @@ start_all() {
     # 检查依赖
     check_dependencies
     
+    # 先清理残留进程
+    cleanup_stale_processes
+    
     # 启动后端 (后台)
     log_info "Starting backend in background..."
     cd "$BACKEND_DIR"
@@ -170,11 +188,20 @@ start_all() {
         source venv/bin/activate
     fi
     
-    nohup python -m uvicorn app.main:app --host 0.0.0.0 --port 8001 --reload > "$PROJECT_ROOT/backend.log" 2>&1 &
+    local WORKERS=$(get_workers)
+    
+    nohup python -m uvicorn app.main:app \
+        --host 0.0.0.0 \
+        --port 8001 \
+        --workers "$WORKERS" \
+        --timeout-keep-alive 30 \
+        --limit-concurrency 100 \
+        --log-level info \
+        > "$PROJECT_ROOT/backend.log" 2>&1 &
     BACKEND_PID=$!
     echo $BACKEND_PID > "$PROJECT_ROOT/.backend.pid"
     
-    log_success "Backend started (PID: $BACKEND_PID)"
+    log_success "Backend started (PID: $BACKEND_PID, workers: $WORKERS)"
     log_info "Backend logs: $PROJECT_ROOT/backend.log"
     
     # 等待后端启动
@@ -212,11 +239,37 @@ start_docker() {
     log_info "PostgreSQL: localhost:5432"
 }
 
+# 清理残留进程
+cleanup_stale_processes() {
+    # 清理 8001 端口上的残留进程
+    local stale_pid=$(lsof -ti :8001 2>/dev/null)
+    if [ -n "$stale_pid" ]; then
+        log_warn "Found stale process on port 8001 (PID: $stale_pid), killing..."
+        kill -9 $stale_pid 2>/dev/null || true
+        sleep 1
+    fi
+    
+    # 清理 5173 端口上的残留进程
+    stale_pid=$(lsof -ti :5173 2>/dev/null)
+    if [ -n "$stale_pid" ]; then
+        log_warn "Found stale process on port 5173 (PID: $stale_pid), killing..."
+        kill -9 $stale_pid 2>/dev/null || true
+        sleep 1
+    fi
+    
+    # 清理僵尸 python 进程
+    local zombies=$(ps aux | grep '[p]ython.*uvicorn' | grep 'Z' | awk '{print $2}')
+    if [ -n "$zombies" ]; then
+        log_warn "Cleaning zombie processes: $zombies"
+        kill -9 $zombies 2>/dev/null || true
+    fi
+}
+
 # 停止服务
 stop_services() {
     log_info "Stopping services..."
     
-    # 停止后端
+    # 停止后端 (通过 PID 文件)
     if [ -f "$PROJECT_ROOT/.backend.pid" ]; then
         BACKEND_PID=$(cat "$PROJECT_ROOT/.backend.pid")
         if kill -0 $BACKEND_PID 2>/dev/null; then
@@ -225,6 +278,9 @@ stop_services() {
         fi
         rm -f "$PROJECT_ROOT/.backend.pid"
     fi
+    
+    # 同时清理残留
+    cleanup_stale_processes
     
     # 如果使用 Docker
     if [ -f "$PROJECT_ROOT/docker-compose.yml" ]; then

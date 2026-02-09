@@ -23,6 +23,22 @@ const STORAGE_KEY = 'mcp_tool_registrations';
 
 export const SYSTEM_MCP_TOOLS: MCPTool[] = [
     {
+        id: 'mcp-neo4j',
+        name: 'Neo4j 知识图谱',
+        description: '连接 Neo4j 图数据库，执行 Cypher 查询，构建和查询知识图谱',
+        icon: '🕸️',
+        category: 'database',
+        enabled: false,
+        isSystem: true,
+        configSchema: [
+            { key: 'uri', label: 'Neo4j URI', type: 'text', required: true, placeholder: 'bolt://180.169.229.230:51001', default: 'bolt://180.169.229.230:51001' },
+            { key: 'username', label: '用户名', type: 'text', required: true, placeholder: 'neo4j', default: 'neo4j' },
+            { key: 'password', label: '密码', type: 'password', required: true, placeholder: '请输入密码', default: '' },
+            { key: 'database', label: '数据库名称', type: 'text', required: false, placeholder: 'neo4j', default: 'neo4j' },
+        ],
+        config: { uri: 'bolt://180.169.229.230:51001', username: 'neo4j', password: '', database: 'neo4j' },
+    },
+    {
         id: 'mcp-ocr',
         name: 'MinerU OCR',
         description: '文档 OCR 文字识别，支持 PDF、图片等格式',
@@ -201,7 +217,7 @@ export function getToolById(toolId: string): MCPTool | undefined {
 /**
  * Update tool configuration
  */
-export function updateToolConfig(toolId: string, config: Record<string, unknown>, enabled: boolean): void {
+export async function updateToolConfig(toolId: string, config: Record<string, unknown>, enabled: boolean): Promise<void> {
     const registrations = loadRegistrations();
     const existingIdx = registrations.findIndex(r => r.toolId === toolId);
 
@@ -219,15 +235,36 @@ export function updateToolConfig(toolId: string, config: Record<string, unknown>
     }
 
     saveRegistrations(registrations);
+    
+    // 同步到后端
+    await saveToolConfigToBackend(toolId, config, enabled);
 }
 
 /**
  * Reset tool to default configuration
  */
-export function resetToolConfig(toolId: string): void {
+export async function resetToolConfig(toolId: string): Promise<void> {
     const registrations = loadRegistrations();
     const filtered = registrations.filter(r => r.toolId !== toolId);
     saveRegistrations(filtered);
+    
+    // 从后端删除
+    try {
+        const { mcpAPI } = await import('../../utils/api');
+        if (toolId === 'mcp-neo4j') {
+            const servers = await mcpAPI.getServers();
+            const existingServer = servers.data?.find((s: any) => 
+                s.name.includes('Neo4j') || s.id === 'mcp-neo4j'
+            );
+            if (existingServer) {
+                await mcpAPI.deleteServer(existingServer.id);
+            }
+        } else {
+            await mcpAPI.deleteToolConfig(toolId);
+        }
+    } catch (error) {
+        console.error('删除后端配置失败:', error);
+    }
 }
 
 // =============================================
@@ -254,6 +291,31 @@ export async function executeTool(toolId: string, params: MCPToolParams): Promis
         let result: MCPToolResult;
 
         switch (toolId) {
+            case 'mcp-neo4j': {
+                // Neo4j工具执行逻辑
+                const input = params.input as { query: string };
+                if (!input.query) {
+                    result = { success: false, output: null, error: '需要提供 Cypher 查询语句 (query)' };
+                } else {
+                    try {
+                        const response = await fetch('/api/v1/neo4j/query', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ query: input.query })
+                        });
+                        if (response.ok) {
+                            const data = await response.json();
+                            result = { success: true, output: data };
+                        } else {
+                            result = { success: false, output: null, error: '查询失败' };
+                        }
+                    } catch (e) {
+                        result = { success: false, output: null, error: `Neo4j 查询错误: ${e}` };
+                    }
+                }
+                break;
+            }
+
             case 'mcp-ocr': {
                 const { executeOCRTool } = await import('./tools/ocrTool');
                 result = await executeOCRTool(params, tool.config);
@@ -372,4 +434,120 @@ export function generateToolDescriptions(): string {
     }).join('\n');
 
     return `\n\n## 可用工具\n${toolDescriptions}\n\n要调用工具，请使用以下格式：\n<tool_call>\n{"tool": "工具ID", "params": {...}}\n</tool_call>`;
+}
+
+
+// =============================================
+// Backend Sync Functions
+// =============================================
+
+/**
+ * 从后端同步工具配置到本地
+ */
+export async function syncToolsWithBackend(): Promise<void> {
+    try {
+        const { mcpAPI } = await import('../../utils/api');
+        
+        // 获取后端的 MCP 服务器配置
+        const serversResponse = await mcpAPI.getServers();
+        const servers = serversResponse.data || [];
+        
+        // 获取后端的工具配置
+        const toolsResponse = await mcpAPI.getAllToolConfigs();
+        const toolConfigs = toolsResponse.data || [];
+        
+        const registrations = loadRegistrations();
+        const regMap = new Map(registrations.map(r => [r.toolId, r]));
+        
+        // 同步 Neo4j 配置
+        const neo4jServer = servers.find((s: any) => 
+            s.name?.includes('Neo4j') || s.id === 'mcp-neo4j'
+        );
+        
+        if (neo4jServer && neo4jServer.env) {
+            const neo4jReg: MCPToolRegistration = {
+                toolId: 'mcp-neo4j',
+                enabled: neo4jServer.is_enabled || false,
+                config: {
+                    uri: neo4jServer.env.NEO4J_URI || neo4jServer.env.uri || '',
+                    username: neo4jServer.env.NEO4J_USERNAME || neo4jServer.env.username || '',
+                    password: neo4jServer.env.NEO4J_PASSWORD || neo4jServer.env.password || '',
+                    database: neo4jServer.env.NEO4J_DATABASE || neo4jServer.env.database || 'neo4j',
+                },
+                addedAt: neo4jServer.created_at || new Date().toISOString(),
+            };
+            regMap.set('mcp-neo4j', neo4jReg);
+        }
+        
+        // 同步其他工具配置
+        for (const toolConfig of toolConfigs) {
+            regMap.set(toolConfig.tool_id, {
+                toolId: toolConfig.tool_id,
+                enabled: toolConfig.enabled,
+                config: toolConfig.config,
+                addedAt: toolConfig.added_at,
+            });
+        }
+        
+        // 保存到 localStorage
+        saveRegistrations(Array.from(regMap.values()));
+        
+        console.log('✅ MCP 配置已从后端同步');
+    } catch (error) {
+        console.error('从后端同步配置失败:', error);
+    }
+}
+
+/**
+ * 保存工具配置到后端
+ */
+export async function saveToolConfigToBackend(toolId: string, config: Record<string, unknown>, enabled: boolean): Promise<void> {
+    try {
+        const { mcpAPI } = await import('../../utils/api');
+        
+        // 对于 Neo4j 工具，使用特殊的服务器配置格式
+        if (toolId === 'mcp-neo4j') {
+            const serverData = {
+                name: 'Neo4j 知识图谱',
+                description: '连接 Neo4j 图数据库，执行 Cypher 查询',
+                connection_type: 'stdio',
+                env: {
+                    NEO4J_URI: config.uri,
+                    NEO4J_USERNAME: config.username,
+                    NEO4J_PASSWORD: config.password,
+                    NEO4J_DATABASE: config.database || 'neo4j',
+                },
+                is_enabled: enabled,
+            };
+            
+            // 尝试更新或创建
+            try {
+                const servers = await mcpAPI.getServers();
+                const existingServer = servers.data?.find((s: any) => 
+                    s.name.includes('Neo4j') || s.id === 'mcp-neo4j'
+                );
+                
+                if (existingServer) {
+                    await mcpAPI.updateServer(existingServer.id, serverData);
+                } else {
+                    await mcpAPI.createServer(serverData);
+                }
+            } catch (error) {
+                console.error('保存 Neo4j 配置到后端失败:', error);
+                // 尝试创建新的
+                await mcpAPI.createServer(serverData);
+            }
+        } else {
+            // 其他工具使用通用的工具配置格式
+            await mcpAPI.saveToolConfig({
+                tool_id: toolId,
+                enabled,
+                config,
+                added_at: new Date().toISOString(),
+            });
+        }
+    } catch (error) {
+        console.error('同步配置到后端失败:', error);
+        throw error;
+    }
 }

@@ -15,7 +15,7 @@ export default defineConfig({
     },
   },
   server: {
-    host: true, // 允许通过本机 IP 或公网代理访问（默认仅 localhost）
+    host: '0.0.0.0', // 允许通过本机 IP 或公网代理访问
     port: 5173,
     proxy: {
       // Proxy MinerU API requests to bypass CORS
@@ -25,10 +25,11 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api\/mineru/, ''),
       },
-      // Backend API Proxy
-      '/api': {
+      // Backend API Proxy - 代理所有 /api/v1 请求到后端
+      '/api/v1': {
         target: 'http://localhost:8001',
         changeOrigin: true,
+        secure: false,
       },
     },
   },

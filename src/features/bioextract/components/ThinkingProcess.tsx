@@ -94,8 +94,8 @@ export const ThinkingProcess: React.FC<ThinkingProcessProps> = ({
                 onClick={onToggle}
             >
                 <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                    <Brain size={16} className="text-purple-500" />
-                    <span>Agent 思考过程</span>
+                    <span className="text-blue-500 text-base">✦</span>
+                    <span>{collapsed ? '显示思路' : '隐藏思路'}</span>
                     {isThinking && (
                         <span className="flex items-center gap-1 text-xs text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full">
                             <span className="w-1.5 h-1.5 bg-purple-500 rounded-full animate-pulse"></span>
