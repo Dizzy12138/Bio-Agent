@@ -124,7 +124,10 @@ check_dependencies() {
         log_error "未安装 npm"; missing=1
     fi
 
-    [ "$missing" -ne 0 ] && { log_error "缺少必要依赖，请先安装"; exit 1; }
+    if [ "$missing" -ne 0 ]; then
+        log_error "缺少必要依赖，请先安装"
+        exit 1
+    fi
 }
 
 # =============================================
