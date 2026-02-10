@@ -133,13 +133,18 @@ export const ChatHistory: React.FC<ChatHistoryProps> = ({
     const formatTime = (dateStr: string) => {
         const date = new Date(dateStr);
         const now = new Date();
+        const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
         const diff = now.getTime() - date.getTime();
 
-        if (diff < 60 * 60 * 1000) {
-            return `${Math.floor(diff / (60 * 1000))} 分钟前`;
-        } else if (diff < 24 * 60 * 60 * 1000) {
-            return `${Math.floor(diff / (60 * 60 * 1000))} 小时前`;
+        if (date >= todayMidnight) {
+            // 今天的对话：显示"X 分钟前" 或 "X 小时前"
+            if (diff < 60 * 60 * 1000) {
+                return `${Math.max(1, Math.floor(diff / (60 * 1000)))} 分钟前`;
+            } else {
+                return `${Math.floor(diff / (60 * 60 * 1000))} 小时前`;
+            }
         } else {
+            // 非今天的对话：显示日期
             return date.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' });
         }
     };

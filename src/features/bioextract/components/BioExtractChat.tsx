@@ -615,14 +615,18 @@ function formatTime(date: Date): string {
 function formatDate(dateString: string): string {
     const date = new Date(dateString);
     const now = new Date();
-    const diff = now.getTime() - date.getTime();
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
 
-    if (days === 0) {
+    // 用本地日历日期比较（基于午夜零点），而非时间差
+    const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const yesterdayMidnight = new Date(todayMidnight.getTime() - 24 * 60 * 60 * 1000);
+    const weekAgoMidnight = new Date(todayMidnight.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+    if (date >= todayMidnight) {
         return '今天 ' + formatTime(date);
-    } else if (days === 1) {
-        return '昨天';
-    } else if (days < 7) {
+    } else if (date >= yesterdayMidnight) {
+        return '昨天 ' + formatTime(date);
+    } else if (date >= weekAgoMidnight) {
+        const days = Math.floor((todayMidnight.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
         return `${days} 天前`;
     } else {
         return date.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' });
