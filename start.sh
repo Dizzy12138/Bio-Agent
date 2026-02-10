@@ -258,6 +258,14 @@ cleanup() {
 
 start_backend() {
     local background="${1:-false}"
+    local force="${2:-false}"
+
+    # 检测已运行的后端服务
+    if port_in_use "$BACKEND_PORT" && [ "$force" != "true" ]; then
+        local existing_pid=$(lsof -ti :"$BACKEND_PORT" 2>/dev/null | head -1)
+        log_success "后端已在运行中 → http://localhost:${BACKEND_PORT} (PID: $existing_pid)，跳过启动"
+        return 0
+    fi
 
     cd "$BACKEND_DIR"
     activate_venv
@@ -268,7 +276,10 @@ start_backend() {
     fi
 
     local WORKERS=$(get_workers)
-    kill_port "$BACKEND_PORT"
+    # 强制模式下先清理
+    if [ "$force" = "true" ]; then
+        kill_port "$BACKEND_PORT"
+    fi
 
     if [ "$background" = "true" ]; then
         log_info "后端启动中 (后台模式, workers: $WORKERS)..."
@@ -303,6 +314,14 @@ start_backend() {
 
 start_frontend() {
     local background="${1:-false}"
+    local force="${2:-false}"
+
+    # 检测已运行的前端服务
+    if port_in_use "$FRONTEND_PORT" && [ "$force" != "true" ]; then
+        local existing_pid=$(lsof -ti :"$FRONTEND_PORT" 2>/dev/null | head -1)
+        log_success "前端已在运行中 → http://localhost:${FRONTEND_PORT} (PID: $existing_pid)，跳过启动"
+        return 0
+    fi
 
     cd "$PROJECT_ROOT"
 
@@ -313,7 +332,10 @@ start_frontend() {
         log_success "前端依赖安装完成"
     fi
 
-    kill_port "$FRONTEND_PORT"
+    # 强制模式下先清理
+    if [ "$force" = "true" ]; then
+        kill_port "$FRONTEND_PORT"
+    fi
 
     if [ "$background" = "true" ]; then
         log_info "前端启动中 (后台模式)..."
@@ -337,16 +359,15 @@ start_frontend() {
 start_all() {
     check_dependencies
     ensure_databases
-    cleanup  # 清理残留
 
     echo ""
     log_info "${BOLD}启动 Bio-Agent Platform...${NC}"
     echo ""
 
-    # 后端 (后台)
+    # 后端 (后台) — 已运行则跳过
     start_backend "true"
 
-    # 前端 (前台，Ctrl+C 会触发 trap → cleanup)
+    # 前端 (前台，Ctrl+C 会触发 trap → cleanup) — 已运行则跳过
     start_frontend "false"
 }
 
@@ -440,6 +461,7 @@ show_help() {
     echo "  --backend       仅启动后端 (前台模式)"
     echo "  --frontend      仅启动前端 (前台模式)"
     echo "  --docker        使用 Docker Compose 启动"
+    echo "  --restart       强制重启所有服务"
     echo "  --stop          停止所有服务"
     echo "  --status        查看服务运行状态"
     echo "  --help, -h      显示此帮助信息"
@@ -449,8 +471,9 @@ show_help() {
     echo "  FRONTEND_PORT    前端端口 (默认: 5173)"
     echo ""
     echo "示例:"
-    echo "  ./start.sh                     # 一键启动全部"
+    echo "  ./start.sh                     # 一键启动（已运行的服务会跳过）"
     echo "  ./start.sh --init              # 首次部署：初始化 DB + 启动"
+    echo "  ./start.sh --restart           # 强制重启所有服务"
     echo "  PORT=9000 ./start.sh           # 指定后端端口"
     echo "  ./start.sh --stop              # 停止所有服务"
     echo ""
@@ -491,6 +514,17 @@ main() {
             ;;
         --stop)
             cleanup
+            ;;
+        --restart)
+            log_info "强制重启所有服务..."
+            cleanup
+            check_dependencies
+            ensure_databases
+            echo ""
+            log_info "${BOLD}启动 Bio-Agent Platform...${NC}"
+            echo ""
+            start_backend "true" "true"
+            start_frontend "false" "true"
             ;;
         --status)
             show_status
