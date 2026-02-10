@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useBioExtractStore } from '../stores/bioextractStore';
 import { ThinkingProcess } from './ThinkingProcess';
 import type { ThinkingStep } from '../agent';
-import { Send, Settings, Database, Server, Terminal, ChevronRight, Search, Dna, Pipette, MessageSquare, Plus } from 'lucide-react';
+import { Send, Settings, Database, Server, Terminal, ChevronRight, Search, Dna, Pipette, MessageSquare, Plus, Pencil, Trash2, Check, X } from 'lucide-react';
 import { Button } from '../../../components/common';
 import { useNavigate } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
@@ -80,8 +80,11 @@ export const BioExtractChat: React.FC = () => {
     const [conversations, setConversations] = useState<Conversation[]>([]);
     const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
     const [showConversations, setShowConversations] = useState(true);
+    const [editingId, setEditingId] = useState<string | null>(null);
+    const [editingTitle, setEditingTitle] = useState('');
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const logEndRef = useRef<HTMLDivElement>(null);
+    const editInputRef = useRef<HTMLInputElement>(null);
     const initCalledRef = useRef(false);
     const navigate = useNavigate();
 
@@ -114,6 +117,49 @@ export const BioExtractChat: React.FC = () => {
             setConversations(data);
         } catch (error) {
             console.error('加载对话列表失败:', error);
+        }
+    };
+
+    // 开始重命名
+    const handleStartRename = (e: React.MouseEvent, conv: Conversation) => {
+        e.stopPropagation();
+        setEditingId(conv.id);
+        setEditingTitle(conv.title || '新对话');
+        // 下一帧聚焦 input
+        setTimeout(() => editInputRef.current?.focus(), 50);
+    };
+
+    // 保存重命名
+    const handleSaveRename = async () => {
+        if (!editingId || !editingTitle.trim()) {
+            setEditingId(null);
+            return;
+        }
+        try {
+            await bioextractAPI.updateConversation(editingId, { title: editingTitle.trim() });
+            setConversations(prev =>
+                prev.map(c => c.id === editingId ? { ...c, title: editingTitle.trim() } : c)
+            );
+        } catch (error) {
+            console.error('重命名失败:', error);
+        }
+        setEditingId(null);
+    };
+
+    // 删除对话
+    const handleDeleteConversation = async (e: React.MouseEvent, convId: string) => {
+        e.stopPropagation();
+        if (!confirm('确定要删除这个对话吗？此操作不可撤销。')) return;
+        try {
+            await bioextractAPI.deleteConversation(convId);
+            setConversations(prev => prev.filter(c => c.id !== convId));
+            // 如果删除的是当前对话，清空选中并重新初始化
+            if (currentConversationId === convId) {
+                setCurrentConversationId(null);
+                await initSession();
+            }
+        } catch (error) {
+            console.error('删除对话失败:', error);
         }
     };
 
@@ -355,21 +401,73 @@ export const BioExtractChat: React.FC = () => {
                         </div>
                         <div className="flex-1 overflow-y-auto p-2">
                             {conversations.map((conv) => (
-                                <button
+                                <div
                                     key={conv.id}
-                                    onClick={() => handleSelectConversation(conv.id)}
-                                    className={`w-full text-left p-3 mb-2 rounded-lg transition-colors ${currentConversationId === conv.id
-                                        ? 'bg-purple-50 border border-purple-200'
-                                        : 'hover:bg-gray-50 border border-transparent'
+                                    className={`group relative w-full text-left p-3 mb-2 rounded-lg transition-colors cursor-pointer ${currentConversationId === conv.id
+                                            ? 'bg-purple-50 border border-purple-200'
+                                            : 'hover:bg-gray-50 border border-transparent'
                                         }`}
+                                    onClick={() => editingId !== conv.id && handleSelectConversation(conv.id)}
                                 >
-                                    <div className="text-sm font-medium text-gray-900 truncate">
-                                        {conv.title || '新对话'}
-                                    </div>
-                                    <div className="text-xs text-gray-500 mt-1">
-                                        {formatDate(conv.updated_at)}
-                                    </div>
-                                </button>
+                                    {editingId === conv.id ? (
+                                        /* 重命名输入框 */
+                                        <div className="flex items-center gap-1">
+                                            <input
+                                                ref={editInputRef}
+                                                type="text"
+                                                value={editingTitle}
+                                                onChange={(e) => setEditingTitle(e.target.value)}
+                                                onKeyDown={(e) => {
+                                                    if (e.key === 'Enter') handleSaveRename();
+                                                    if (e.key === 'Escape') setEditingId(null);
+                                                }}
+                                                onBlur={handleSaveRename}
+                                                className="flex-1 text-sm px-2 py-1 border border-purple-300 rounded focus:outline-none focus:ring-1 focus:ring-purple-400 bg-white"
+                                            />
+                                            <button
+                                                onMouseDown={(e) => { e.preventDefault(); handleSaveRename(); }}
+                                                className="p-1 text-green-600 hover:bg-green-50 rounded"
+                                                title="保存"
+                                            >
+                                                <Check size={14} />
+                                            </button>
+                                            <button
+                                                onMouseDown={(e) => { e.preventDefault(); setEditingId(null); }}
+                                                className="p-1 text-gray-400 hover:bg-gray-100 rounded"
+                                                title="取消"
+                                            >
+                                                <X size={14} />
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        /* 正常显示 */
+                                        <>
+                                            <div className="text-sm font-medium text-gray-900 truncate pr-12">
+                                                {conv.title || '新对话'}
+                                            </div>
+                                            <div className="text-xs text-gray-500 mt-1">
+                                                {formatDate(conv.updated_at)}
+                                            </div>
+                                            {/* Hover 操作按钮 */}
+                                            <div className="absolute right-2 top-1/2 -translate-y-1/2 hidden group-hover:flex items-center gap-0.5 bg-white/90 rounded-md shadow-sm border border-gray-100 px-1 py-0.5">
+                                                <button
+                                                    onClick={(e) => handleStartRename(e, conv)}
+                                                    className="p-1 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded transition-colors"
+                                                    title="重命名"
+                                                >
+                                                    <Pencil size={13} />
+                                                </button>
+                                                <button
+                                                    onClick={(e) => handleDeleteConversation(e, conv.id)}
+                                                    className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                                                    title="删除"
+                                                >
+                                                    <Trash2 size={13} />
+                                                </button>
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
                             ))}
                         </div>
                     </>
