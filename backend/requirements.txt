@@ -10,8 +10,17 @@ httpx==0.25.2
 anthropic==0.7.7
 python-multipart==0.0.6
 
+# PostgreSQL + 向量检索
+sqlalchemy[asyncio]>=2.0.0
+asyncpg>=0.29.0
+pgvector>=0.2.4
+
+# Pydantic 邮箱验证
+email-validator>=2.0.0
+
 # 认证相关
 passlib[bcrypt]==1.7.4
+bcrypt>=4.0.1,<4.1       # passlib 1.7.4 与 bcrypt>=4.1 不兼容
 python-jose[cryptography]==3.3.0
 PyJWT==2.8.0
 

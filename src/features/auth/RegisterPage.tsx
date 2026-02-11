@@ -13,7 +13,7 @@ import logoImg from '../../assets/logo.png';
 export const RegisterPage: React.FC = () => {
     const navigate = useNavigate();
     const { success, error } = useToast();
-    
+
     const [formData, setFormData] = useState({
         username: '',
         email: '',
@@ -40,8 +40,8 @@ export const RegisterPage: React.FC = () => {
             return false;
         }
 
-        if (formData.password.length < 6) {
-            error('密码至少需要6个字符');
+        if (formData.password.length < 8) {
+            error('密码至少需要8个字符');
             return false;
         }
 
@@ -62,7 +62,7 @@ export const RegisterPage: React.FC = () => {
 
     const handleRegister = async (e: React.FormEvent) => {
         e.preventDefault();
-        
+
         if (!validateForm()) {
             return;
         }
@@ -75,13 +75,18 @@ export const RegisterPage: React.FC = () => {
                 password: formData.password,
                 full_name: formData.fullName || undefined,
             });
-            
+
             success('注册成功！正在跳转登录...');
             setTimeout(() => {
                 navigate('/login');
             }, 1500);
         } catch (err: any) {
-            error(err.response?.data?.detail || '注册失败，请稍后重试');
+            const detail = err.response?.data?.detail;
+            // Pydantic 422 validation error returns detail as array of objects
+            const msg = Array.isArray(detail)
+                ? detail.map((d: any) => d.msg || d.message || JSON.stringify(d)).join('; ')
+                : (typeof detail === 'string' ? detail : '注册失败，请稍后重试');
+            error(msg);
         } finally {
             setLoading(false);
         }
@@ -153,7 +158,7 @@ export const RegisterPage: React.FC = () => {
                                     type={showPassword ? 'text' : 'password'}
                                     value={formData.password}
                                     onChange={(e) => handleChange('password', e.target.value)}
-                                    placeholder="至少6个字符"
+                                    placeholder="至少8个字符"
                                     autoComplete="new-password"
                                     disabled={loading}
                                 />

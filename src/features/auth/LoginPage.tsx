@@ -13,7 +13,7 @@ import logoImg from '../../assets/logo.png';
 export const LoginPage: React.FC = () => {
     const navigate = useNavigate();
     const { success, error } = useToast();
-    
+
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
@@ -21,7 +21,7 @@ export const LoginPage: React.FC = () => {
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
-        
+
         if (!username || !password) {
             error('请输入用户名和密码');
             return;
@@ -34,7 +34,11 @@ export const LoginPage: React.FC = () => {
             // 登录成功后，使用 window.location.href 强制刷新页面
             window.location.href = '/experts';
         } catch (err: any) {
-            error(err.response?.data?.detail || '登录失败，请检查用户名和密码');
+            const detail = err.response?.data?.detail;
+            const msg = Array.isArray(detail)
+                ? detail.map((d: any) => d.msg || d.message || JSON.stringify(d)).join('; ')
+                : (typeof detail === 'string' ? detail : '登录失败，请检查用户名和密码');
+            error(msg);
             setLoading(false);
         }
     };

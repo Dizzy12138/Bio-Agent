@@ -350,95 +350,143 @@ class DatabaseInitializer:
         print(f"   ✓ Imported {len(papers)} documents")
         return papers
     
+    @staticmethod
+    def _merge_functional(dst: Dict, src: Dict) -> None:
+        """合并 functional_performance / biological_impact 字段"""
+        if not src:
+            return
+        for k, v in src.items():
+            if v is None or v == "":
+                continue
+            if isinstance(v, dict):
+                if k not in dst:
+                    dst[k] = dict(v)
+                continue
+            if k not in dst:
+                dst[k] = v
+            elif isinstance(v, str) and isinstance(dst[k], str):
+                dst[k] = dst[k] + "; " + v
+
     async def import_biomaterials(self, delivery_records: List[Dict], microbe_records: List[Dict]):
-        """导入生物材料表"""
-        print("\n🧬 Importing biomaterials...")
+        """导入生物材料表（按材料名称聚合，一个材料对应多篇论文）"""
+        print("\n🧬 Importing biomaterials (aggregated by name)...")
         
-        biomaterials = []
-        seen_ids = set()
+        # 按材料名称聚合
+        material_map: Dict[str, Dict[str, Any]] = {}
+        
+        def ensure_material(name: str, category: str, subcategory: str) -> Dict:
+            if name not in material_map:
+                material_map[name] = {
+                    "name": name,
+                    "category": category,
+                    "subcategory": subcategory,
+                    "paper_ids": set(),
+                    "functional_performance": {},
+                    "biological_impact": {},
+                    "raw_data": {},
+                }
+            return material_map[name]
         
         # 处理递送系统
         print("   Processing delivery systems...")
         for record in delivery_records:
             features = record.get("features", {})
-            assemblies = features.get("assemblies", [])
+            paper_id = record["paper_id"]
             
-            for asm in assemblies:
-                system_id = asm.get("system_id", "")
-                if not system_id or system_id in seen_ids:
-                    continue
-                seen_ids.add(system_id)
-                
+            # 从 assemblies 中提取材料
+            for asm in features.get("assemblies", []):
                 composition = asm.get("composition", {})
-                func_perf = asm.get("functional_performance", {})
-                bio_impact = asm.get("biological_impact_on_host", {})
+                mat_name = (composition.get("material_name") or "").strip()
+                if not mat_name:
+                    continue
                 
-                biomaterials.append({
-                    "id": system_id,
-                    "name": composition.get("material_name", system_id),
-                    "category": "delivery_system",
-                    "subcategory": asm.get("system_category", "unknown"),
-                    "paper_id": record["paper_id"],
-                    "paper_titles": [record["title"]],
-                    "source_doc_ids": [record["paper_id"]],
-                    "paper_count": 1,
-                    "composition": composition,
-                    "functional_performance": func_perf,
-                    "biological_impact": bio_impact,
-                    "payload": composition.get("payload_name"),
-                    "loading_mode": composition.get("loading_mode"),
-                    "release_kinetics": func_perf.get("release_kinetics"),
-                    "raw_data": asm,
-                    "created_at": datetime.now(),
-                })
+                sub = asm.get("system_category", "unknown")
+                ent = ensure_material(mat_name, "delivery_system", sub)
+                ent["paper_ids"].add(paper_id)
+                
+                # 合并 functional_performance
+                fp = asm.get("functional_performance", {})
+                if fp:
+                    self._merge_functional(ent["functional_performance"], fp)
+                
+                # 合并 biological_impact
+                bio = asm.get("biological_impact_on_host", {})
+                if bio:
+                    self._merge_functional(ent["biological_impact"], bio)
+                
+                # 保留第一条的 raw_data
+                if not ent["raw_data"]:
+                    ent["raw_data"] = asm
+            
+            # 从 materials 列表提取（如果存在）
+            for m in features.get("materials", []):
+                name = (m.get("standardized_name") or "").strip()
+                if not name:
+                    continue
+                identity = m.get("identity", {})
+                sub = (identity.get("material_type") or "unknown").strip()
+                ent = ensure_material(name, "delivery_system", sub)
+                ent["paper_ids"].add(paper_id)
         
-        self.stats["biomaterials_delivery"] = len(biomaterials)
-        print(f"   Delivery systems: {len(biomaterials)}")
+        delivery_count = sum(1 for e in material_map.values() if e["category"] == "delivery_system")
+        self.stats["biomaterials_delivery"] = delivery_count
+        print(f"   Delivery systems: {delivery_count} (aggregated)")
         
         # 处理微生物
         print("   Processing microbes...")
-        microbe_count = 0
         for record in microbe_records:
             features = record.get("features", {})
-            microbes = features.get("microbes", [])
+            paper_id = record["paper_id"]
             
-            for mic in microbes:
-                identity = mic.get("identity", {})
-                std_name = mic.get("standardized_name", "")
-                if not std_name or std_name in seen_ids:
+            for mic in features.get("microbes", []):
+                std_name = (mic.get("standardized_name") or "").strip()
+                if not std_name:
                     continue
-                seen_ids.add(std_name)
                 
-                chassis = mic.get("chassis_and_growth", {})
-                effector = mic.get("effector_modules", {})
-                sensing = mic.get("sensing_modules", {})
-                biosafety = mic.get("biosafety_and_containment", {})
+                identity = mic.get("identity", {})
+                sub = (identity.get("type") or "unknown").strip()
+                ent = ensure_material(std_name, "microbe", sub)
+                ent["paper_ids"].add(paper_id)
                 
-                biomaterials.append({
-                    "id": std_name,
-                    "name": std_name,
-                    "category": "microbe",
-                    "subcategory": identity.get("type", "unknown"),
-                    "paper_id": record["paper_id"],
-                    "paper_titles": [record["title"]],
-                    "source_doc_ids": [record["paper_id"]],
-                    "paper_count": 1,
-                    "identity": identity,
-                    "chassis_and_growth": chassis,
-                    "effector_modules": effector,
-                    "sensing_modules": sensing,
-                    "biosafety": biosafety,
-                    "genus": identity.get("genus"),
-                    "species": identity.get("species"),
-                    "strain": identity.get("strain"),
-                    "is_engineered": identity.get("is_engineered"),
-                    "raw_data": mic,
-                    "created_at": datetime.now(),
-                })
-                microbe_count += 1
+                # 保留完整微生物数据作为 raw_data
+                if not ent["raw_data"]:
+                    ent["raw_data"] = dict(mic)
+                
+                # 提取 functionality notes
+                for tm in (mic.get("effector_modules") or {}).get("therapeutic_mechanisms") or []:
+                    notes = (tm or {}).get("mechanism_notes")
+                    if notes:
+                        self._merge_functional(ent["functional_performance"], {"functionality_notes": notes})
         
+        microbe_count = sum(1 for e in material_map.values() if e["category"] == "microbe")
         self.stats["biomaterials_microbe"] = microbe_count
-        print(f"   Microbes: {microbe_count}")
+        print(f"   Microbes: {microbe_count} (aggregated)")
+        
+        # 构建文献 ID → 标题 映射
+        paper_title_map = {}
+        for record in delivery_records + microbe_records:
+            pid = record.get("paper_id", "")
+            if pid and pid not in paper_title_map:
+                paper_title_map[pid] = record.get("title", "")
+        
+        # 转换为写入格式
+        biomaterials = []
+        for name, ent in material_map.items():
+            paper_list = list(ent["paper_ids"])
+            paper_titles = [paper_title_map.get(pid, "") for pid in paper_list]
+            
+            biomaterials.append({
+                "name": name,
+                "category": ent["category"],
+                "subcategory": ent["subcategory"],
+                "paper_ids": paper_list,
+                "paper_count": len(paper_list),
+                "paper_titles": paper_titles,
+                "functional_performance": ent["functional_performance"],
+                "biological_impact": ent["biological_impact"],
+                "raw_data": ent["raw_data"],
+                "created_at": datetime.now(),
+            })
         
         # 写入数据库
         if not self.dry_run and biomaterials:
@@ -451,8 +499,10 @@ class DatabaseInitializer:
                 await bio_collection.insert_many(batch)
                 print(f"   Inserted batch: {i + len(batch)}/{len(biomaterials)}")
         
-        total = self.stats["biomaterials_delivery"] + self.stats["biomaterials_microbe"]
-        print(f"   ✓ Imported {total} biomaterials total")
+        total = len(material_map)
+        multi_paper = sum(1 for b in biomaterials if b["paper_count"] > 1)
+        print(f"   ✓ Imported {total} biomaterials (aggregated)")
+        print(f"     - {multi_paper} materials linked to multiple papers")
         return biomaterials
     
     async def create_default_admin(self):

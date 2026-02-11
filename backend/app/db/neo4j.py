@@ -74,7 +74,8 @@ class Neo4jDB:
                 return
             
             # 2. 尝试从配置文件读取
-            config_file = '/usropt2429/Bio-Agent/.mcp_neo4j_config.json'
+            project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+            config_file = os.path.join(project_root, '.mcp_neo4j_config.json')
             if os.path.exists(config_file):
                 with open(config_file, 'r') as f:
                     config = json.load(f)
