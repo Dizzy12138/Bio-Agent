@@ -123,11 +123,10 @@ class DatabaseInitializer:
         
         # biomaterials collection - 生物材料
         bio = self.db["biomaterials"]
-        await bio.create_index("id", unique=True)
+        await bio.create_index("name", unique=True)
         await bio.create_index("category")
         await bio.create_index("subcategory")
-        await bio.create_index("paper_id")
-        await bio.create_index("name")
+        await bio.create_index("paper_ids")
         await bio.create_index([("name", "text"), ("paper_titles", "text")])
         print("   ✓ biomaterials")
         
